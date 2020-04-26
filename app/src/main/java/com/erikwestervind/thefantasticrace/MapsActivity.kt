@@ -1,12 +1,13 @@
 package com.erikwestervind.thefantasticrace
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -21,6 +22,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var lastLocation: Location
+    lateinit var geofencingClient: GeofencingClient
+    var geofences = listOf<Geofence>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,34 +46,92 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
      */
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        setUpMap()
 
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        map.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        //map.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        // Add a marker in Luma and move the camera
+        val luma = LatLng(59.304568, 18.094541)
+
+        //map.moveCamera(CameraUpdateFactory.newLatLng(luma))
 
         map.getUiSettings().setZoomControlsEnabled(true)
-        map.setOnMarkerClickListener(this)
+        //map.setOnMarkerClickListener(this)
 
-        setUpMap()
+        geofencingClient = LocationServices.getGeofencingClient(this)
+        //var locations = DataManager.locations
+
+        geofences = DataManager.locations.map {
+            println("!!! Geonfece created: " + it.name)
+            Geofence.Builder()
+                .setRequestId(it.name)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setCircularRegion(it.coord.latitude, it.coord.longitude, 200.0f)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .build()
+
+        }
+        geofences.forEach {
+            println("!!! Geofence in geofences: " + it.requestId)
+        }
+
+        val geofencingRequest = GeofencingRequest.Builder().apply {
+            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            addGeofences(geofences)
+            println("!!! Geofence Request")
+        }.build()
+
+        val geofencePendingIntent: PendingIntent by lazy {
+            val intent = Intent(this, GeofenceReceiver::class.java)
+            PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+
+        geofencingClient = LocationServices.getGeofencingClient(this)
+
+        geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent).run {
+            addOnFailureListener {
+                println("!!! Error adding intent")
+            }
+            addOnSuccessListener {
+                //map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
+                //println("!!! Intent added")
+            }
+            println("!!! Request and Intent added")
+        }
 
     }
 
         override fun onMarkerClick(p0: Marker?) = false
 
     private fun setUpMap() {
+
+        // Required if your app targets Android 10 or higher.
         if (ActivityCompat.checkSelfPermission(this,
-                        android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
-            return
+                android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            if (true) {
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                    LOCATION_PERMISSION_REQUEST_CODE)
+            } else {
+                // Show an explanation to the user as to why your app needs the
+                // permission. Display the explanation *asynchronously* -- don't block
+                // this thread waiting for the user's response!
+            }
+        } else {
+            // Background location runtime permission already granted.
+            // You can now call geofencingClient.addGeofences().
         }
+
+//        if (ActivityCompat.checkSelfPermission(this,
+//                        android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(this,
+//                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+//            return
+//        }
 
         map.isMyLocationEnabled = true
 
         fusedLocationClient.lastLocation.addOnSuccessListener(this) { location ->
             // Got last known location. In some rare situations this can be null.
-            // 3
             if (location != null) {
                 lastLocation = location
                 val currentLatLng = LatLng(location.latitude, location.longitude)
