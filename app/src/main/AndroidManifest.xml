@@ -39,7 +39,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <receiver android:name=".receiver.GeofenceReceiver"
+        <receiver android:name=".GeofenceReceiver"
             android:enabled="true"
             android:exported="true"/>
     </application>

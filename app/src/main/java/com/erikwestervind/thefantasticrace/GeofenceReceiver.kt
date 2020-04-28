@@ -17,22 +17,28 @@ class GeofenceReceiver: BroadcastReceiver() {
                 //geofencingEvent.errorCode)
             // display error
             println("!!! Error")
-        } //else {
-//            geofencingEvent.triggeringGeofences.forEach {
-//                val geofence = it.requestId
-//                println("!!!" + geofence)
-//                // display notification
-//            }
-//        }
+        }
+            geofencingEvent.triggeringGeofences.forEach {
+               val geofence = it.requestId
+                println("!!! Geofence name: " + geofence)
+                // display notification
+            }
+
         // Get the transition type.
         val geofenceTransition = geofencingEvent.geofenceTransition
 
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
         geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
 
+            val triggeringGeofences = geofencingEvent.triggeringGeofences
+//            val geofenceTransitionDetails = getGeofenceTransitionDetails(
+//                this,
+//                geofenceTransition,
+//                triggeringGeofences
+//            )
+
             // Get the geofences that were triggered. A single event can trigger
             // multiple geofences.
-            Log.i("!!!", "You have entered a geofence")
 
             println("!!! You have entered a geofence")
 
@@ -41,5 +47,6 @@ class GeofenceReceiver: BroadcastReceiver() {
         }
 
     }
+
 
 }
