@@ -9,7 +9,6 @@ import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
-import androidx.core.app.JobIntentService
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 
@@ -20,6 +19,9 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.GeoPoint
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -30,7 +32,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
     private var locationUpdateState = false
+    lateinit var db: FirebaseFirestore
+    lateinit var auth: FirebaseAuth
     var geofences = listOf<Geofence>()
+    var locationsFirebase = mutableListOf<GameLocation>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +56,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
             }
         }
+
+        db = FirebaseFirestore.getInstance()
+        auth = FirebaseAuth.getInstance()
+
+        //Will be moved to create game activity later:
+        //addToFirebase()
+
         createLocationRequest()
 
     }
@@ -76,45 +88,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         map.getUiSettings().setZoomControlsEnabled(true)
         map.setOnMarkerClickListener(this)
 
-        geofencingClient = LocationServices.getGeofencingClient(this)
 
-        geofences = DataManager.locations.map {
-            println("!!! Geonfece created: " + it.name)
-            Geofence.Builder()
-                .setRequestId(it.name)
-                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                .setCircularRegion(it.coord.latitude, it.coord.longitude, 200.0f)
-                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-                .build()
 
-        }
-        geofences.forEach {
-            println("!!! Geofence in geofences: " + it.requestId)
-        }
+        val locationsRef = db.collection("places")
 
-        val geofencingRequest = GeofencingRequest.Builder().apply {
-            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            addGeofences(geofences)
-            println("!!! Geofence Request")
-        }.build()
 
-        val geofencePendingIntent: PendingIntent by lazy {
-            val intent = Intent(this, GeofenceReceiver::class.java)
-            PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-        }
+        locationsRef.addSnapshotListener { snapshot, e ->
+            if (snapshot!= null) {
+                for(document in snapshot.documents) {
+                    val newItem = document.toObject(GameLocation::class.java)
+                    if (newItem != null)
+                        locationsFirebase.add(newItem!!)
+                    println("!!! : ${newItem}")
+                }
+                createGeofence()
+                println("Array längd: ${locationsFirebase.size}")
 
-        geofencingClient = LocationServices.getGeofencingClient(this)
-
-        geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent).run {
-            addOnFailureListener {
-                println("!!! Error adding intent")
             }
-            addOnSuccessListener {
-                //map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
-                //println("!!! Intent added")
-            }
-            println("!!! Request and Intent added")
+
         }
+
 
         setUpMap()
 
@@ -156,6 +149,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         }
     }
 
+    private fun addToFirebase() {
+        val place = GameLocation("Sjöstan",59.304596, 18.094637)
+
+        db.collection("places").add(place)
+            .addOnSuccessListener {
+                println("!!! write")
+            }
+            .addOnFailureListener {
+                println("!!! Didn't write")
+            }
+    }
+
     private fun placeMarkerOnMap(location: LatLng) {
         val markerOptions = MarkerOptions().position(location)
         map.addMarker(markerOptions)
@@ -173,6 +178,52 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         //2
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
         println("!!! " + fusedLocationClient.lastLocation)
+
+    }
+
+    private fun createGeofence() {
+        geofencingClient = LocationServices.getGeofencingClient(this)
+
+
+        geofences = locationsFirebase.map {
+
+            val coords = LatLng(it.latitude!!, it.longitude!!)
+            println("!!! Geonfece created: " + it.name)
+            Geofence.Builder()
+                .setRequestId(it.name)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setCircularRegion(coords.latitude, coords.longitude, 200.0f)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .build()
+
+        }
+        geofences.forEach {
+            println("!!! Geofence in geofences added: " + it.requestId)
+        }
+
+        val geofencingRequest = GeofencingRequest.Builder().apply {
+            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            addGeofences(geofences)
+            println("!!! Geofence Request")
+        }.build()
+
+        val geofencePendingIntent: PendingIntent by lazy {
+            val intent = Intent(this, GeofenceReceiver::class.java)
+            PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+
+        geofencingClient = LocationServices.getGeofencingClient(this)
+
+        geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent).run {
+            addOnFailureListener {
+                println("!!! Error adding intent")
+            }
+            addOnSuccessListener {
+                //map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
+                //println("!!! Intent added")
+            }
+            println("!!! Request and Intent added")
+        }
 
     }
 
@@ -224,43 +275,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         }
     }
 
-    // 2
     override fun onPause() {
         super.onPause()
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
-    // 3
     public override fun onResume() {
         super.onResume()
         if (!locationUpdateState) {
             startLocationUpdates()
-        }
-    }
-
-    private val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(this, GeofenceReceiver::class.java)
-        PendingIntent.getBroadcast(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT)
-    }
-
-
-
-    private fun handleEvent(event: GeofencingEvent) {
-        // 1
-        if (event.geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-            // 2
-            println("!!! You entered!")
-//            val reminder = getFirstReminder(event.triggeringGeofences)
-//            val message = reminder?.message
-//            val latLng = reminder?.latLng
-//            if (message != null && latLng != null) {
-//                // 3
-//                sendNotification(this, message, latLng)
-//            }
         }
     }
 
