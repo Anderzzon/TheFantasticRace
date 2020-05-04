@@ -19,9 +19,10 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.Query
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -34,8 +35,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private var locationUpdateState = false
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
-    var geofences = listOf<Geofence>()
+    lateinit var gameInfo: GameInfo
+    lateinit var gameId: String
+    var geofences = mutableListOf<Geofence>()
     var locationsFirebase = mutableListOf<GameLocation>()
+    var gameLocations = mutableListOf<GameLocation>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,11 +61,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             }
         }
 
+        gameId = "q6ou5AIikGUM5tSOY1Bw" // Later, create function that changes this dynamically to the game you are in
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
+        DataManager.locations
+        DataManager.markers
 
         //Will be moved to create game activity later:
         //addToFirebase()
+
+
+
 
         createLocationRequest()
 
@@ -79,7 +89,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
 
-
         // Add a marker in Luma and move the camera
 //        val luma = LatLng(59.304568, 18.094541)
 //        map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
@@ -89,31 +98,160 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         map.setOnMarkerClickListener(this)
 
 
+        getGameInfo()
+        //getLocations()
 
-        val locationsRef = db.collection("places")
 
+        //updateLocations()
 
+        val user = auth.currentUser
+
+        val locationsRef = db.collection("users").document(user!!.uid).collection("races")
+            .document("q6ou5AIikGUM5tSOY1Bw").collection("stops")
+
+        //Get data from Firestore - old, will be replaced:
         locationsRef.addSnapshotListener { snapshot, e ->
             if (snapshot!= null) {
                 for(document in snapshot.documents) {
                     val newItem = document.toObject(GameLocation::class.java)
                     if (newItem != null)
-                        locationsFirebase.add(newItem!!)
-                    println("!!! : ${newItem}")
+                        DataManager.locations.add(newItem!!)
+                    println("!!! From old function: ${DataManager.locations[0]}")
                 }
                 createGeofence()
-                println("Array längd: ${locationsFirebase.size}")
-
             }
-
         }
 
-
         setUpMap()
+    }
+
+    private fun getGameInfo() {
+        val user = auth.currentUser
+        db.collection("users").document(user!!.uid).collection("races_invited")
+            .whereEqualTo("parent_race", gameId)
+            .get()
+            .addOnSuccessListener { documents ->
+                for(document in documents) {
+                    val game = document.toObject(GameInfo::class.java)
+                    if (game != null) {
+                        gameInfo =game
+                        println("!!! Game info: ${game}")
+                }
+                    //Get and update locations when the game info is collected
+                    getLocations()
+
+            }
+        }.addOnFailureListener { exception ->
+                println("!!! get failed with  ${exception}")
+            }
+    }
+
+    private fun crateGame() {
+        val user = auth.currentUser
+        db.collection("users").document(user!!.uid).collection("races").document(gameId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    val game = document.toObject(GameInfo::class.java)
+                    if (game != null) {
+                        //Do something
+                    }
+                }
+            }.addOnFailureListener { exception ->
+                println("!!! get failed with  ${exception}")
+            }
 
     }
 
-        override fun onMarkerClick(p0: Marker?) = false
+    private fun getLocations() {
+        val user = auth.currentUser
+        db.collection("users").document(user!!.uid).collection("places")
+            .whereEqualTo("race", gameId)
+            .orderBy("order", Query.Direction.ASCENDING)
+            .get()
+            .addOnSuccessListener { documents ->
+                gameLocations.clear()
+                DataManager.locations.clear()
+                DataManager.markers.clear()
+                for(document in documents) {
+                    val newStop = document.toObject(GameLocation::class.java)
+                    if(newStop != null) {
+                        gameLocations.add(newStop)
+                        DataManager.locations.add(newStop)
+                        val location = LatLng(newStop.latitude!!, newStop.longitude!!)
+                        val marker = MarkerOptions().position(location)
+                        DataManager.markers.add(marker)
+                        println("!!! ${newStop}")
+                        //placeMarkerOnMap(LatLng(newStop.latitude!!, newStop.longitude!!))
+                    }
+                }
+                addMarkersToMap()
+                updateLocations()
+            }
+            .addOnFailureListener { exception ->
+                println("!!! Error ${exception}")
+            }
+    }
+
+    private fun updateLocations() {
+        val user = auth.currentUser
+        db.collection("users").document(user!!.uid).collection("places")
+            .whereEqualTo("race", gameId)
+            .orderBy("order")
+            .addSnapshotListener { snapshot, e ->
+                if(e != null) {
+                    println("!!! Listen failed ${e}")
+                }
+                if (snapshot != null) {
+                    DataManager.locations.clear()
+                    //DataManager.markers.clear()
+                    //gameLocations.clear()
+                    for(document in snapshot.documents) {
+                        val newStop = document.toObject(GameLocation::class.java)
+                        if(newStop != null) {
+                            newStop.id = document.id
+                            DataManager.locations.add(newStop)
+                            //val location = LatLng(newStop.latitude!!, newStop.longitude!!)
+                            //val marker = MarkerOptions().position(location)
+                            //DataManager.markers.add(marker)
+                            //gameLocations.add(newStop)
+                            println("!!! ${newStop}")
+                            println("!!! Id: ${newStop.id}")
+
+                            //placeMarkerOnMap(LatLng(newStop.latitude!!, newStop.longitude!!))
+                        }
+
+                    }
+                    //addMarkersToMap()
+                    //When all locations are loaded or updated, Start game logic
+
+                }
+            }
+    }
+
+    private fun addMarkersToMap() {
+        for(marker in DataManager.markers) {
+            map.addMarker(marker)
+            println("!!! marker added Position: ${marker.position}")
+        }
+    }
+    private fun removeMarkersFromMap() {
+        for (marker in DataManager.markers) {
+        }
+    }
+
+    private fun startGame() {
+        val timestamp = Timestamp.now()
+        val date = timestamp.toDate()
+
+        if (gameInfo.start_time!! < date) {
+            println("!!! Game started")
+        }
+        println("!!! Dagens datum och tid: ${date}")
+
+    }
+
+    override fun onMarkerClick(p0: Marker?) = false
 
     private fun setUpMap() {
 
@@ -143,23 +281,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 lastLocation = location
                 val currentLatLng = LatLng(location.latitude, location.longitude)
                 //placeMarkerOnMap(currentLatLng)
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12f))
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
 
             }
         }
     }
 
-    private fun addToFirebase() {
-        val place = GameLocation("Sjöstan",59.304596, 18.094637)
-
-        db.collection("places").add(place)
-            .addOnSuccessListener {
-                println("!!! write")
-            }
-            .addOnFailureListener {
-                println("!!! Didn't write")
-            }
-    }
+//    private fun addToFirebase() {
+//        val place = GameLocation("Sjöstan",59.304596, 18.094637)
+//
+//        val user = auth.currentUser
+//        db.collection("users").document(user!!.uid).collection("places").add(place)
+//            .addOnSuccessListener {
+//                println("!!! write")
+//            }
+//            .addOnFailureListener {
+//                println("!!! Didn't write")
+//            }
+//    }
 
     private fun placeMarkerOnMap(location: LatLng) {
         val markerOptions = MarkerOptions().position(location)
@@ -184,19 +323,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private fun createGeofence() {
         geofencingClient = LocationServices.getGeofencingClient(this)
 
+        val coords = LatLng(DataManager.locations[0].latitude!!, DataManager.locations[0].longitude!!)
+        val geofence = Geofence.Builder()
+            .setRequestId(DataManager.locations[0].name)
+            .setExpirationDuration(Geofence.NEVER_EXPIRE)
+            .setCircularRegion(coords.latitude, coords.longitude, 200.0f)
+            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+            .build()
 
-        geofences = locationsFirebase.map {
+        geofences.add(geofence)
 
-            val coords = LatLng(it.latitude!!, it.longitude!!)
-            println("!!! Geonfece created: " + it.name)
-            Geofence.Builder()
-                .setRequestId(it.name)
-                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                .setCircularRegion(coords.latitude, coords.longitude, 200.0f)
-                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-                .build()
-
-        }
+//        geofences = DataManager.locations.map {
+//
+//            val coords = LatLng(it.latitude!!, it.longitude!!)
+//            println("!!! Geonfece created: " + it.name)
+//            Geofence.Builder()
+//                .setRequestId(it.name)
+//                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+//                .setCircularRegion(coords.latitude, coords.longitude, 200.0f)
+//                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+//                .build()
+//
+//        }
         geofences.forEach {
             println("!!! Geofence in geofences added: " + it.requestId)
         }

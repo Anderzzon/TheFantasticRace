@@ -20,7 +20,7 @@ class GeofenceReceiver: BroadcastReceiver() {
         }
             geofencingEvent.triggeringGeofences.forEach {
                val geofence = it.requestId
-                println("!!! Geofence name: " + geofence)
+                println("!!! Geofence entered: " + geofence)
                 // display notification
             }
 
