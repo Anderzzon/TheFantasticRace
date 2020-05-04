@@ -1,5 +1,6 @@
 package com.erikwestervind.thefantasticrace
 
+import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -7,6 +8,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 object DataManager {
     val locations = mutableListOf<GameLocation>()
     val markers = mutableListOf<MarkerOptions>()
+    val circles = mutableListOf<CircleOptions>()
 
     init {
 //        createMockData()

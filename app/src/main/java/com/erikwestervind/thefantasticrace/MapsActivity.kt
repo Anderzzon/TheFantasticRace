@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -16,6 +17,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -97,7 +99,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         map.getUiSettings().setZoomControlsEnabled(true)
         map.setOnMarkerClickListener(this)
 
-
         getGameInfo()
         //getLocations()
 
@@ -173,19 +174,34 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 gameLocations.clear()
                 DataManager.locations.clear()
                 DataManager.markers.clear()
+                DataManager.circles.clear()
                 for(document in documents) {
                     val newStop = document.toObject(GameLocation::class.java)
                     if(newStop != null) {
+                        newStop.id = document.id
                         gameLocations.add(newStop)
                         DataManager.locations.add(newStop)
+
                         val location = LatLng(newStop.latitude!!, newStop.longitude!!)
                         val marker = MarkerOptions().position(location)
                         DataManager.markers.add(marker)
+                        //val radius: Double = (gameInfo.geofence_radius)!!.toDouble()
+
+                        val circle = CircleOptions()
+                            .center(location)
+                            .radius(100.0)
+                            .strokeColor(Color.BLUE)
+                            .strokeWidth(5.0f)
+                            .fillColor(0x220000FF)
+
+                        DataManager.circles.add(circle)
                         println("!!! ${newStop}")
                         //placeMarkerOnMap(LatLng(newStop.latitude!!, newStop.longitude!!))
                     }
                 }
                 addMarkersToMap()
+                addGeofenceCircle(0)
+                //StartGame and then listen for updates
                 updateLocations()
             }
             .addOnFailureListener { exception ->
@@ -203,26 +219,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     println("!!! Listen failed ${e}")
                 }
                 if (snapshot != null) {
-                    DataManager.locations.clear()
+                    //DataManager.locations.clear()
                     //DataManager.markers.clear()
                     //gameLocations.clear()
                     for(document in snapshot.documents) {
-                        val newStop = document.toObject(GameLocation::class.java)
-                        if(newStop != null) {
-                            newStop.id = document.id
-                            DataManager.locations.add(newStop)
+                        val stop = document.toObject(GameLocation::class.java)
+                        if(stop != null) {
+                            stop.id = document.id
+                            val index = stop.order!!
+                            DataManager.locations[index].id = stop.id
+                            DataManager.locations[index].timestamp = stop.timestamp
+                            //DataManager.locations.add(newStop)
                             //val location = LatLng(newStop.latitude!!, newStop.longitude!!)
                             //val marker = MarkerOptions().position(location)
                             //DataManager.markers.add(marker)
                             //gameLocations.add(newStop)
-                            println("!!! ${newStop}")
-                            println("!!! Id: ${newStop.id}")
+                            println("!!! ${stop}")
+                            println("!!! Id: ${stop.id}")
 
                             //placeMarkerOnMap(LatLng(newStop.latitude!!, newStop.longitude!!))
                         }
 
                     }
-                    //addMarkersToMap()
                     //When all locations are loaded or updated, Start game logic
 
                 }
@@ -235,11 +253,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             println("!!! marker added Position: ${marker.position}")
         }
     }
-    private fun removeMarkersFromMap() {
-        for (marker in DataManager.markers) {
-        }
+
+//    mMap!!.addCircle(CircleOptions().apply {
+//        center(latLng)
+//        radius(200.0)
+//        strokeColor(Color.BLUE)
+//        strokeWidth(5.0f)
+//        fillColor(0x220000FF)
+//    })
+
+    private fun addGeofenceCircle(circle: Int) {
+        val circle = DataManager.circles[circle]
+        map.addCircle(circle)
     }
 
+    private fun runGame() {
+
+    }
+
+    //Move this function to other activity:
     private fun startGame() {
         val timestamp = Timestamp.now()
         val date = timestamp.toDate()
