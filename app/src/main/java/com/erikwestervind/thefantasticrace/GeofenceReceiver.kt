@@ -3,14 +3,20 @@ package com.erikwestervind.thefantasticrace
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class GeofenceReceiver: BroadcastReceiver() {
+    lateinit var db: FirebaseFirestore
+    lateinit var auth: FirebaseAuth
 
     override fun onReceive(context: Context?, intent: Intent?) {
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
+
+        db = FirebaseFirestore.getInstance()
+        auth = FirebaseAuth.getInstance()
 
         if (geofencingEvent.hasError()) {
             //val errorMessage = GeofenceErrorMessages.getErrorString(this,
@@ -20,6 +26,7 @@ class GeofenceReceiver: BroadcastReceiver() {
         }
             geofencingEvent.triggeringGeofences.forEach {
                val geofence = it.requestId
+                updateLocation(geofence)
                 println("!!! Geofence entered: " + geofence)
                 // display notification
             }
@@ -48,5 +55,19 @@ class GeofenceReceiver: BroadcastReceiver() {
 
     }
 
+    private fun updateLocation(uid:String) {
+        val user = auth.currentUser
+        var index:Int
+        val locationRef = db.collection("users").document(user!!.uid).collection("places").document(uid)
+
+        locationRef
+            .update("visited", true)
+            .addOnSuccessListener {
+                println("!!! DocumentSnapshot successfully updated!")}
+            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+
+
+
+    }
 
 }
