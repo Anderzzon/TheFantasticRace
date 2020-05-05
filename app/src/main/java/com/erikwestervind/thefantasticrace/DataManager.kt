@@ -8,6 +8,7 @@ object DataManager {
     val markers = mutableListOf<Marker>()
     val circlesOptions = mutableListOf<CircleOptions>()
     val circles = mutableListOf<Circle>()
+    var gameInfo = GameInfo()
 
     init {
 //        createMockData()

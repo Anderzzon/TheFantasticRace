@@ -59,15 +59,25 @@ class GeofenceReceiver: BroadcastReceiver() {
         val user = auth.currentUser
         var index:Int
         val locationRef = db.collection("users").document(user!!.uid).collection("places").document(uid)
-
         locationRef
-            .update("visited", true)
-            .addOnSuccessListener {
-                println("!!! DocumentSnapshot successfully updated!")}
-            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+            .get()
+            .addOnSuccessListener { document ->
 
+                val newStop = document.toObject(GameLocation::class.java)
+                if(newStop != null) {
 
-
+                    index = newStop.order!!
+                    if (DataManager.gameInfo.unlock_with_question == true) {
+                        DataManager.markers[index].isVisible = true
+                    } else {
+                        locationRef
+                            .update("visited", true)
+                            .addOnSuccessListener {
+                                println("!!! DocumentSnapshot successfully updated!")}
+                            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+                    }
+                }
+            }
     }
 
 }

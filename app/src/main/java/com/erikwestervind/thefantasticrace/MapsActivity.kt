@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -116,6 +117,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     val game = document.toObject(GameInfo::class.java)
                     if (game != null) {
                         gameInfo =game
+                        DataManager.gameInfo = game
                         println("!!! Game info: ${game}")
                 }
                     //Get and update locations when the game info is collected
@@ -169,7 +171,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                         val location = LatLng(newStop.latitude!!, newStop.longitude!!)
                         val markerOption = MarkerOptions()
                             .position(location)
-                            //.visible(false)
+                            .visible(false)
                         DataManager.markerOptions.add(markerOption)
 
                         val radius = gameInfo.radius
@@ -277,9 +279,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 DataManager.circles[circle].isVisible = true
             }, diff)
 
-            countDownTimer = object : CountDownTimer(diff, 1000) {
-
-            }
         }
     }
 
@@ -361,19 +360,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         }
     }
 
-//    private fun addToFirebase() {
-//        val place = GameLocation("Sjöstan",59.304596, 18.094637)
-//
-//        val user = auth.currentUser
-//        db.collection("users").document(user!!.uid).collection("places").add(place)
-//            .addOnSuccessListener {
-//                println("!!! write")
-//            }
-//            .addOnFailureListener {
-//                println("!!! Didn't write")
-//            }
-//    }
-
     private fun placeMarkerOnMap(location: LatLng) {
         val markerOptions = MarkerOptions().position(location)
         map.addMarker(markerOptions)
@@ -436,6 +422,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val geofencePendingIntent: PendingIntent by lazy {
             val intent = Intent(this, GeofenceReceiver::class.java)
             PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
         }
 
         geofencingClient = LocationServices.getGeofencingClient(this)
