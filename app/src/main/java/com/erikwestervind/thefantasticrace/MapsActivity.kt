@@ -20,10 +20,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.CircleOptions
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -40,7 +37,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private var locationUpdateState = false
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
-    lateinit var gameInfo: GameInfo
+    lateinit var gameInfo: GameInfo //Remove
     lateinit var gameId: String
     lateinit var countDownTimer: CountDownTimer
     var gameLocations = mutableListOf<GameLocation>()
@@ -61,7 +58,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 lastLocation = p0.lastLocation
                 //placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
                 //println("!!! " + lastLocation.latitude + " " + lastLocation.longitude)
-
             }
         }
 
@@ -116,7 +112,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 for(document in documents) {
                     val game = document.toObject(GameInfo::class.java)
                     if (game != null) {
-                        gameInfo =game
+                        gameInfo =game //Remove
                         DataManager.gameInfo = game
                         println("!!! Game info: ${game}")
                 }
@@ -143,7 +139,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             }.addOnFailureListener { exception ->
                 println("!!! get failed with  ${exception}")
             }
-
     }
 
     private fun getLocations() {
@@ -172,6 +167,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                         val markerOption = MarkerOptions()
                             .position(location)
                             .visible(false)
+                            .snippet(newStop.id)
                         DataManager.markerOptions.add(markerOption)
 
                         val radius = gameInfo.radius
@@ -212,9 +208,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     println("!!! Listen failed ${e}")
                 }
                 if (snapshot != null) {
-                    //DataManager.locations.clear()
-                    //DataManager.markers.clear()
-                    //gameLocations.clear()
                     for(document in snapshot.documents) {
                         val stop = document.toObject(GameLocation::class.java)
                         if(stop != null) {
@@ -227,21 +220,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             if (stop.order == 0 && stop.timestamp == null) {
                                 stop.timestamp = gameInfo.start_time
                             }
-                            //DataManager.locations.add(newStop)
-                            //val location = LatLng(newStop.latitude!!, newStop.longitude!!)
-                            //val marker = MarkerOptions().position(location)
-                            //DataManager.markers.add(marker)
-                            //gameLocations.add(newStop)
                             println("!!! Updated: ${stop}")
                             println("!!! ID Updated: ${stop.id}")
 
-                            //placeMarkerOnMap(LatLng(newStop.latitude!!, newStop.longitude!!))
                         }
-
                     }
-                    //When all locations are loaded or updated, Start game logic
+                    //When all locations are loaded or updated, Start game logic:
                     runGame()
-
                 }
             }
     }
@@ -278,7 +263,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             Handler().postDelayed({
                 DataManager.circles[circle].isVisible = true
             }, diff)
-
         }
     }
 
@@ -288,14 +272,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val radius: Float = (gameInfo.radius)!!.toFloat()
 
         for (i in 0..DataManager.locations.size) {
+            //Change visited stops if any:
             if (DataManager.locations[i].visited == true) {
                 DataManager.circles[i].isVisible = false
-                DataManager.markers[i].remove()
-                val circle = DataManager.circlesOptions[i] //Test
-                val isVisible = circle.isVisible //Test
-                println("!!! Visited true, i: ${i}, isVisible: ${isVisible}")
+                //DataManager.markers[i].remove()
+                DataManager.markers[i].isVisible = true
+                DataManager.markers[i].setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
 
             }
+            //Set up current stop
             else if (DataManager.locations[i].visited == false) {
                 if (DataManager.locations[i].timestamp == null) {
                     val timestamp = Timestamp.now()
@@ -308,23 +293,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                         .update("timestamp", timestamp)
                 }
 
-
                 createGeofence(i, radius)
                 handleCircle(i)
-                //DataManager.circles[i].isVisible = true
-
-                val circle = DataManager.circlesOptions[i] //Test
-                val isVisible = circle.isVisible //Test
-
-                println("!!! Visited false, i: ${i}, isVisible: ${isVisible}")
                 return
             }
-
-
         }
     }
 
-    override fun onMarkerClick(p0: Marker?) = false
+    override fun onMarkerClick(marker: Marker?) : Boolean {
+
+        val GAME_STRING = "GAMEID"
+        val MARKER_STRING = "MARKER"
+
+        if (marker != null) {
+            val intent = Intent(this, AnswerQuestionActivity::class.java).apply {
+                putExtra(GAME_STRING, gameId)
+                putExtra(MARKER_STRING, marker.snippet)
+            }
+            startActivity(intent)
+            println("!!! Marker snippet ${marker.snippet}")
+        }
+        return true
+    }
 
     private fun setUpMap() {
 
@@ -358,11 +348,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
             }
         }
-    }
-
-    private fun placeMarkerOnMap(location: LatLng) {
-        val markerOptions = MarkerOptions().position(location)
-        map.addMarker(markerOptions)
     }
 
     private fun startLocationUpdates() {

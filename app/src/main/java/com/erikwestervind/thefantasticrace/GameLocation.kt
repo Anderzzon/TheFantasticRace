@@ -5,6 +5,9 @@ import com.google.firebase.Timestamp
 import java.util.*
 
 data class GameLocation(var name: String? = null,
+                        var hint: String? = null,
+                        var question: String? = null,
+                        var answer: String? = null,
                         var id: String? = null,
                         var latitude: Double? = null,
                         var longitude: Double? = null,
