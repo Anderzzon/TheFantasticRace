@@ -7,6 +7,21 @@
     tools:context=".AnswerQuestionActivity">
 
     <TextView
+        android:id="@+id/textViewQuestion"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="Question"
+        android:textAlignment="viewStart"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/view" />
+
+    <TextView
         android:id="@+id/textViewHint"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -15,12 +30,14 @@
         android:layout_marginEnd="16dp"
         android:text="No Hint to display"
         android:textAlignment="viewStart"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <View
-        android:layout_width="Wrap_content"
+        android:id="@+id/view"
+        android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
@@ -29,5 +46,31 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textViewHint" />
+
+    <EditText
+        android:id="@+id/answerText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/textview_boarder"
+        app:boxBackgroundMode="none"
+        android:padding="10dp"
+        android:ems="10"
+        android:inputType="textPassword"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewQuestion" />
+
+    <Button
+        android:id="@+id/answerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="44dp"
+        android:text="Answer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/answerText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

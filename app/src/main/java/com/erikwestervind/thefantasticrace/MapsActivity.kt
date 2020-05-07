@@ -52,10 +52,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         locationCallback = object : LocationCallback() {
-            override fun onLocationResult(p0: LocationResult) {
-                super.onLocationResult(p0)
+            override fun onLocationResult(locationResult: LocationResult) {
+                super.onLocationResult(locationResult)
 
-                lastLocation = p0.lastLocation
+                lastLocation = locationResult.lastLocation
                 //placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
                 //println("!!! " + lastLocation.latitude + " " + lastLocation.longitude)
             }
