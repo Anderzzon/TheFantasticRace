@@ -21,10 +21,14 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+
+const val SHOW_NEXT_STOP_DIRECT = 0
+const val SHOW_NEXT_STOP_WITH_DELAY = 1
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -154,6 +158,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 DataManager.markers.clear()
                 DataManager.circlesOptions.clear()
                 DataManager.circles.clear()
+                map.clear() //Testing
                 for(document in documents) {
                     val newStop = document.toObject(GameLocation::class.java)
 
@@ -176,7 +181,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             //.radius(100.0)
                             .radius(radius!!)
                             .strokeColor(Color.BLUE)
-                            .strokeWidth(5.0f)
+                            .strokeWidth(0.0f)
                             .fillColor(0x220000FF)
                             .visible(false)
 
@@ -235,6 +240,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         for(markerOption in DataManager.markerOptions) {
 
             val marker = map.addMarker(markerOption)
+            marker.tag = marker.snippet
             DataManager.markers.add(marker)
             println("!!! marker added Position: ${marker.position}")
         }
@@ -252,13 +258,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private fun handleCircle(circle: Int) {
         val timestamp = Timestamp.now()
         val date = timestamp.toDate()
-        if (gameInfo.show_next_stop == 0) {
+        if (gameInfo.show_next_stop == SHOW_NEXT_STOP_DIRECT) {
             DataManager.circles[circle].isVisible = true
-        } else if (gameInfo.show_next_stop == 1) {
+        } else if (gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
 
             val currentTime = Timestamp.now().toDate().time
-            val endTime = DataManager.locations[circle].timestamp!!.time + 20000//600000
+            val endTime = DataManager.locations[circle].timestamp!!.time + 30000//600000
             val diff = endTime - currentTime
+            if (DataManager.locations[circle].hint != null) {
+                Snackbar.make(findViewById(R.id.map), DataManager.locations[circle].hint!!, Snackbar.LENGTH_INDEFINITE).show()
+            }
 
             Handler().postDelayed({
                 DataManager.circles[circle].isVisible = true
@@ -308,7 +317,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         if (marker != null) {
             val intent = Intent(this, AnswerQuestionActivity::class.java).apply {
                 putExtra(GAME_STRING, gameId)
-                putExtra(MARKER_STRING, marker.snippet)
+                putExtra(MARKER_STRING, marker.tag.toString())
             }
             startActivity(intent)
             println("!!! Marker snippet ${marker.snippet}")

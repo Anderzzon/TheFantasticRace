@@ -76,6 +76,7 @@ class GeofenceReceiver: BroadcastReceiver() {
 
                     index = newStop.order!!
                     if (DataManager.gameInfo.unlock_with_question == true) {
+
                         DataManager.markers[index].isVisible = true
                     } else {
                         locationRef

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -83,9 +84,13 @@ class AnswerQuestionActivity : AppCompatActivity() {
         println("!!! answer input: ${answerInput}")
             if (question!! == answerInput) {
                 println("!!! Correct answeer")
+                val correct = "Correct answer"
+                Snackbar.make(findViewById(R.id.answerButton), correct, Snackbar.LENGTH_LONG).show()
                 return true
             }
         println("!!! Wrong answer")
+        val wrongAnswer = "Wrong answer"
+        Snackbar.make(findViewById(R.id.answerButton), wrongAnswer, Snackbar.LENGTH_INDEFINITE).show()
         return false
 
     }

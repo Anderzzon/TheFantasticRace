@@ -14,7 +14,8 @@ data class GameLocation(var name: String? = null,
                         var race: String? = null,
                         var order: Int? = null,
                         var timestamp: Date? = null,
-                        var visited: Boolean = false)
+                        var visited: Boolean = false,
+                        var entered: Boolean = false)
 {
 
 }
