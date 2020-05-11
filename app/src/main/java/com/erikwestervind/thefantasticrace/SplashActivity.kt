@@ -11,7 +11,8 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val signedOutIntent = Intent(this, LoginActivity::class.java)
-        val signedInIntent = Intent(this, MapsActivity::class.java)
+        val signedInIntent = Intent(this, GameListActivity::class.java)
+        //val signedInIntent = Intent(this, MapsActivity::class.java)
 
         if (FirebaseAuth.getInstance().currentUser == null)
             startActivity(signedOutIntent)

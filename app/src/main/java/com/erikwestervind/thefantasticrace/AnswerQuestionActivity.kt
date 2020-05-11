@@ -40,17 +40,20 @@ class AnswerQuestionActivity : AppCompatActivity() {
 
         getLocationInfo(locationID)
 
-        answerButton = findViewById<Button>(R.id.answerButton)
-        answerButton.setOnClickListener {
-            if(question.answer != null) {
-                println("!!! Question is not null")
-                val answer = answerQuestion(question.answer!!)
-                if (answer == true) {
-                    updateVisit()
+            answerButton = findViewById<Button>(R.id.answerButton)
+            answerButton.setOnClickListener {
+                if(question.answer != null) {
+                    if (question.entered == true) {
+                    println("!!! Question is not null")
+                    val answer = answerQuestion(question.answer!!)
+                    if (answer == true) {
+                        updateVisit()
+                    }
                 }
+                println("!!! Answer is ${question.answer}")
             }
-            println("!!! Answer is ${question.answer}")
         }
+
 
     }
 
@@ -67,11 +70,15 @@ class AnswerQuestionActivity : AppCompatActivity() {
                 if (questionFB != null) {
                     question = questionFB
                     setTitle(questionFB.name!!.capitalize())
+
                     if (question.hint != null) {
                         hintTextView.text = questionFB.hint
                     }
                     if (questionFB.question != null) {
-                        questionTextView.text = questionFB.question
+                        if (question.entered == true) {
+                            questionTextView.text = questionFB.question
+                        }
+
                     }
                     index = question.order!!
                 }

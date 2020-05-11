@@ -16,6 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".GameListActivity"></activity>
         <activity android:name=".SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,10 +26,9 @@
         </activity>
         <activity
             android:name=".AnswerQuestionActivity"
-            android:windowSoftInputMode="adjustResize"
-            android:parentActivityName=".MapsActivity"></activity>
-        <activity android:name=".LoginActivity">
-        </activity>
+            android:parentActivityName=".MapsActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".LoginActivity"></activity>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -43,6 +43,7 @@
 
         <activity
             android:name=".MapsActivity"
+            android:parentActivityName=".GameListActivity"
             android:label="@string/title_activity_maps">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

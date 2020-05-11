@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -29,6 +28,7 @@ import com.google.firebase.firestore.Query
 
 const val SHOW_NEXT_STOP_DIRECT = 0
 const val SHOW_NEXT_STOP_WITH_DELAY = 1
+const val GAME_ID_KEY = "GAME_ID"
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -43,12 +43,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     lateinit var auth: FirebaseAuth
     lateinit var gameInfo: GameInfo //Remove
     lateinit var gameId: String
-    lateinit var countDownTimer: CountDownTimer
     var gameLocations = mutableListOf<GameLocation>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
@@ -65,7 +65,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             }
         }
 
-        gameId = "q6ou5AIikGUM5tSOY1Bw" // Later, create function that changes this dynamically to the game you are in
+        //gameId = "q6ou5AIikGUM5tSOY1Bw" // Later, create function that changes this dynamically to the game you are in
+        gameId = intent.getStringExtra(GAME_ID_KEY)
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
         DataManager.locations
@@ -118,6 +119,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     if (game != null) {
                         gameInfo =game //Remove
                         DataManager.gameInfo = game
+                        setTitle(gameInfo.name!!.capitalize())
                         println("!!! Game info: ${game}")
                 }
                     //Get and update locations when the game info is collected
@@ -255,22 +257,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         }
     }
 
-    private fun handleCircle(circle: Int) {
+    private fun handleMarker(marker: Int) {
         val timestamp = Timestamp.now()
         val date = timestamp.toDate()
         if (gameInfo.show_next_stop == SHOW_NEXT_STOP_DIRECT) {
-            DataManager.circles[circle].isVisible = true
+            DataManager.markers[marker].isVisible = true
         } else if (gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
 
             val currentTime = Timestamp.now().toDate().time
-            val endTime = DataManager.locations[circle].timestamp!!.time + 30000//600000
+            val endTime = DataManager.locations[marker].timestamp!!.time + 30000//600000
             val diff = endTime - currentTime
-            if (DataManager.locations[circle].hint != null) {
-                Snackbar.make(findViewById(R.id.map), DataManager.locations[circle].hint!!, Snackbar.LENGTH_INDEFINITE).show()
+            if (DataManager.locations[marker].hint != null) {
+                Snackbar.make(findViewById(R.id.map), DataManager.locations[marker].hint!!, Snackbar.LENGTH_INDEFINITE).show()
             }
 
             Handler().postDelayed({
-                DataManager.circles[circle].isVisible = true
+                DataManager.markers[marker].isVisible = true
             }, diff)
         }
     }
@@ -303,7 +305,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 }
 
                 createGeofence(i, radius)
-                handleCircle(i)
+                handleMarker(i)
                 return
             }
         }

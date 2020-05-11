@@ -76,9 +76,15 @@ class GeofenceReceiver: BroadcastReceiver() {
 
                     index = newStop.order!!
                     if (DataManager.gameInfo.unlock_with_question == true) {
-
-                        DataManager.markers[index].isVisible = true
+                        if (newStop.visited == false) {
+                            DataManager.circles[index].isVisible = true
+                        }
+                        locationRef
+                            .update("entered", true)
+                        //DataManager.markers[index].isVisible = true
                     } else {
+                        locationRef
+                            .update("entered", true)
                         locationRef
                             .update("visited", true)
                             .addOnSuccessListener {
