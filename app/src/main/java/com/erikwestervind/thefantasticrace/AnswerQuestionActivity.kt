@@ -2,6 +2,7 @@ package com.erikwestervind.thefantasticrace
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -34,17 +35,21 @@ class AnswerQuestionActivity : AppCompatActivity() {
         hintTextView = findViewById(R.id.textViewHint)
         questionTextView = findViewById(R.id.textViewQuestion)
         answerView = findViewById(R.id.answerText)
+        answerButton = findViewById(R.id.answerButton)
+
+        questionTextView.visibility = View.GONE
+        answerView.visibility = View.GONE
+        answerButton.visibility = View.GONE
 
         val gameID = intent.getStringExtra(GAME_STRING)
         locationID = intent.getStringExtra(MARKER_STRING)
 
         getLocationInfo(locationID)
 
-            answerButton = findViewById<Button>(R.id.answerButton)
+
             answerButton.setOnClickListener {
                 if(question.answer != null) {
                     if (question.entered == true) {
-                    println("!!! Question is not null")
                     val answer = answerQuestion(question.answer!!)
                     if (answer == true) {
                         updateVisit()
@@ -69,7 +74,8 @@ class AnswerQuestionActivity : AppCompatActivity() {
                 val questionFB = document.toObject(GameLocation::class.java)
                 if (questionFB != null) {
                     question = questionFB
-                    setTitle(questionFB.name!!.capitalize())
+                    showHideViews()
+                    title = questionFB.name!!.capitalize()
 
                     if (question.hint != null) {
                         hintTextView.text = questionFB.hint
@@ -112,5 +118,20 @@ class AnswerQuestionActivity : AppCompatActivity() {
                 println("!!! DocumentSnapshot successfully updated!")
             }
             .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+    }
+
+    private fun showHideViews() {
+
+        if (question != null) {
+            if (question.entered == false) {
+                questionTextView.visibility = View.GONE
+                answerView.visibility = View.GONE
+                answerButton.visibility = View.GONE
+            } else {
+                questionTextView.visibility = View.VISIBLE
+                answerView.visibility = View.VISIBLE
+                answerButton.visibility = View.VISIBLE
+            }
+        }
     }
 }

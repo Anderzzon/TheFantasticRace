@@ -60,6 +60,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 super.onLocationResult(locationResult)
 
                 lastLocation = locationResult.lastLocation
+
+                val user = auth.currentUser
+                val locationRef = db.collection("users").document(user!!.uid)
+                locationRef
+                    .update("latitude", lastLocation.latitude)
+                locationRef
+                    .update("longitude", lastLocation.longitude)
                 //placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
                 //println("!!! " + lastLocation.latitude + " " + lastLocation.longitude)
             }
