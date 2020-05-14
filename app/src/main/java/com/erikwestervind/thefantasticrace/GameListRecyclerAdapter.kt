@@ -6,7 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.Timestamp
 
 class GameListRecyclerAdapter (private val context: Context, private val games: List<GameInfo>)
     : RecyclerView.Adapter<GameListRecyclerAdapter.ViewHolder>() {
@@ -38,11 +40,17 @@ class GameListRecyclerAdapter (private val context: Context, private val games: 
 
         init {
             itemView.setOnClickListener {
-                val intent = Intent(context, MapsActivity::class.java)
-                intent.putExtra(GAME_ID_KEY, games[gamePosition].parent_race)
-                context.startActivity(intent)
+                val timestamp = Timestamp.now()
+                val date = timestamp.toDate()
+                if (date > games[gamePosition].start_time) {
+                    //val intent = Intent(context, MapsActivity::class.java)
+                    val intent = Intent(context, ActiveGameActivity::class.java)
+                    intent.putExtra(GAME_ID_KEY, games[gamePosition].parent_race)
+                    context.startActivity(intent)
+                } else {
+                    Toast.makeText(context, "Game hasn't started yet", Toast.LENGTH_LONG).show()
+                }
             }
-
         }
     }
 
