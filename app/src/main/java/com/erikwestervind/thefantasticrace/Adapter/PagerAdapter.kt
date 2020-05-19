@@ -7,12 +7,19 @@ import com.erikwestervind.thefantasticrace.Fragments.MapFragment
 import com.erikwestervind.thefantasticrace.Fragments.PlayersFragment
 import com.erikwestervind.thefantasticrace.Fragments.StopsFragment
 
-internal class PagerViewAdapter(fm: FragmentManager?): FragmentPagerAdapter(fm!!) {
+internal class PagerViewAdapter(fm: FragmentManager?, id: String): FragmentPagerAdapter(fm!!) {
+
+    private val id = id
+
     override fun getItem(position: Int): Fragment {
 
         return when(position) {
             0 -> {
-                StopsFragment()
+                //val stopsFragment = StopsFragment.newInstance(id)
+                println("!!! id: ${id}")
+
+                return StopsFragment.newInstance("q6ou5AIikGUM5tSOY1Bw")
+                //StopsFragment()
             }
             1 -> {
                 MapFragment()

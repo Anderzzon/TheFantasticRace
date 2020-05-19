@@ -1,13 +1,23 @@
 package com.erikwestervind.thefantasticrace
 
+import android.app.Activity
+import android.content.Intent
+import android.content.IntentSender
+import android.content.pm.PackageManager
+import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ImageButton
+import androidx.core.app.ActivityCompat
 import androidx.viewpager.widget.PagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.erikwestervind.thefantasticrace.Adapter.PagerViewAdapter
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
 
-
+//const val SHOW_NEXT_STOP_DIRECT = 0
+//const val SHOW_NEXT_STOP_WITH_DELAY = 1
+//const val GAME_ID_KEY = "GAME_ID"
 
 class ActiveGameActivity : AppCompatActivity() {
 
@@ -20,9 +30,30 @@ class ActiveGameActivity : AppCompatActivity() {
 
     lateinit var gameId: String
 
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var lastLocation: Location
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var locationRequest: LocationRequest
+    private var locationUpdateState = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_active_game)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                super.onLocationResult(locationResult)
+
+                lastLocation = locationResult.lastLocation
+
+                //placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
+                //println("!!! " + lastLocation.latitude + " " + lastLocation.longitude)
+            }
+        }
+
+        createLocationRequest()
 
         gameId = intent.getStringExtra(GAME_ID_KEY)
 
@@ -43,7 +74,7 @@ class ActiveGameActivity : AppCompatActivity() {
             mViewPager.currentItem = 2
         }
 
-        mPagerViewAdapter = PagerViewAdapter(supportFragmentManager)
+        mPagerViewAdapter = PagerViewAdapter(supportFragmentManager, gameId)
         mViewPager.adapter = mPagerViewAdapter
         mViewPager.offscreenPageLimit = 3
 
@@ -87,6 +118,87 @@ class ActiveGameActivity : AppCompatActivity() {
             playersBtn.setImageResource(R.drawable.ic_group_white_24dp)
         }
 
+    }
+
+    private fun createLocationRequest() {
+        // 1
+        locationRequest = LocationRequest()
+        // 2
+        locationRequest.interval = 5000
+        // 3
+        locationRequest.fastestInterval = 3000
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+
+        // 4
+        val client = LocationServices.getSettingsClient(this)
+        val task = client.checkLocationSettings(builder.build())
+
+        // 5
+        task.addOnSuccessListener {
+            locationUpdateState = true
+            startLocationUpdates()
+        }
+        task.addOnFailureListener { e ->
+            // 6
+            if (e is ResolvableApiException) {
+                // Location settings are not satisfied, but this can be fixed
+                // by showing the user a dialog.
+                try {
+                    // Show the dialog by calling startResolutionForResult(),
+                    // and check the result in onActivityResult().
+                    e.startResolutionForResult(this@ActiveGameActivity,
+                        REQUEST_CHECK_SETTINGS)
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    // Ignore the error.
+                }
+            }
+        }
+    }
+
+    private fun startLocationUpdates() {
+        //1
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                arrayOf(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                ActiveGameActivity.LOCATION_PERMISSION_REQUEST_CODE
+            )
+            return
+        }
+        //2
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
+        println("!!! " + fusedLocationClient.lastLocation)
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CHECK_SETTINGS) {
+            if (resultCode == Activity.RESULT_OK) {
+                locationUpdateState = true
+                startLocationUpdates()
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    public override fun onResume() {
+        super.onResume()
+        if (!locationUpdateState) {
+            startLocationUpdates()
+        }
+    }
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
+        private const val REQUEST_CHECK_SETTINGS = 2
     }
 
 

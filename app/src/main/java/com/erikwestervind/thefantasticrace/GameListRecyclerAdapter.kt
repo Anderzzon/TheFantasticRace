@@ -25,14 +25,14 @@ class GameListRecyclerAdapter (private val context: Context, private val games: 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val game = games[position]
         holder.textName.text = game.name
-        holder.textDescription.text = game.description
+        holder.textDescription?.text = game.description
         holder.itemID = game.parent_race!!
         holder.gamePosition = position
 
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val textName = itemView.findViewById<TextView>(R.id.nameTextView)
+        val textName = itemView.findViewById<TextView>(R.id.stopNameTextView)
         val textDescription = itemView.findViewById<TextView>(R.id.descriptionTextView)
         var gamePosition = 0
         var itemID = ""

@@ -5,4 +5,5 @@
     <color name="colorAccent">#03DAC5</color>
     <color name="colorUnChecked">#C099F8</color>
     <color name="design_snackbar_background_color" tools:override="true">#8636F2</color>
+    <color name="boarderColor">#E3E3E3</color>
 </resources>
