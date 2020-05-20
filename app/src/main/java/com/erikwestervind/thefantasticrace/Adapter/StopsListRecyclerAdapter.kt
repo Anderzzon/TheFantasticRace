@@ -2,6 +2,8 @@ package com.erikwestervind.thefantasticrace.Adapter
 
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.shapes.Shape
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,13 +34,17 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
             holder.stopNameTextView?.text = stop.name!!.capitalize()
             holder.stopID = stop.id!!
             holder.gamePosition = position
+            holder.padlock.visibility = View.GONE
 
         if (!stops[position].visited) {
             holder.checkMark.visibility = View.GONE
         }
-//        if (stops[position].timestamp == null) {
-//
-//        }
+        if (stops[position].timestamp == null) {
+            holder.stopNumerTextView.setBackgroundResource(R.drawable.rounded_list_grey) //Sets circle to grey
+            holder.stopNameTextView.visibility = View.GONE
+            holder.padlock.visibility = View.VISIBLE
+
+        }
 
     }
 
@@ -48,6 +54,7 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
         val stopNumerTextView = itemView.findViewById<TextView>(R.id.listItemNumberView)
         val stopNameTextView = itemView.findViewById<TextView>(R.id.stopNameTextView)
         val checkMark = itemView.findViewById<ImageView>(R.id.checkMarkImageView)
+        val padlock = itemView.findViewById<ImageView>(R.id.padlockImageView)
         var gamePosition = 0
         var stopID = ""
 
@@ -61,7 +68,9 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
                     intent.putExtra("MARKER", stops[gamePosition].id)
                     parent.context.startActivity(intent)
                 } else {
-                    Toast.makeText(parent.context, "You need to visit stop ${(gamePosition)}: ${stops[gamePosition-1].name!!.capitalize()} first", Toast.LENGTH_LONG).show()
+                    val message = Toast.makeText(parent.context, "You need to visit stop ${(gamePosition)}: ${stops[gamePosition-1].name!!.capitalize()} first", Toast.LENGTH_LONG)
+                    message.setGravity(Gravity.BOTTOM, 0, 200)
+                    message.show()
                 }
             }
         }

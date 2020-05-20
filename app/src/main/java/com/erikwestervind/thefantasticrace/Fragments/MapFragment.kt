@@ -2,13 +2,20 @@ package com.erikwestervind.thefantasticrace.Fragments
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
+import android.provider.ContactsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.fragment.app.Fragment
 import com.erikwestervind.thefantasticrace.*
 import com.erikwestervind.thefantasticrace.R
@@ -21,6 +28,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import kotlinx.android.synthetic.*
 
 
 /**
@@ -41,6 +49,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     lateinit var auth: FirebaseAuth
     lateinit var gameInfo: GameInfo //Remove
     lateinit var gameId: String
+    lateinit var mapHintTextView: TextView
     var gameLocations = mutableListOf<GameLocation>()
 
     override fun onCreateView(
@@ -53,7 +62,10 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         mapFragment.getMapAsync {
             googleMap -> map = googleMap
             map.isMyLocationEnabled = true
+
             mapIsReady = true
+
+            mapHintTextView = view!!.findViewById(R.id.mapHintTextView)
 
             googleMap.setOnMarkerClickListener { // Triggered when user click any marker on the map
 
@@ -248,7 +260,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             val endTime = DataManager.locations[marker].timestamp!!.time + 30000//600000
             val diff = endTime - currentTime
             if (DataManager.locations[marker].hint != null) {
-                //Snackbar.make(findViewById(R.id.map), DataManager.locations[marker].hint!!, Snackbar.LENGTH_INDEFINITE).show()
+                mapHintTextView.text = DataManager.locations[marker].hint!!
             }
 
             Handler().postDelayed({
@@ -268,9 +280,17 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 DataManager.circles[i].isVisible = false
                 //DataManager.markers[i].remove()
                 DataManager.markers[i].isVisible = true
-                DataManager.markers[i].setIcon(
-                    BitmapDescriptorFactory.defaultMarker(
-                        BitmapDescriptorFactory.HUE_GREEN))
+
+//                DataManager.markers[i].setIcon(
+//                    BitmapDescriptorFactory.defaultMarker(
+//                        BitmapDescriptorFactory.HUE_GREEN))
+
+                DataManager.markers[i].setIcon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_checked)))
+
+
+
+
 
             }
             //Set up current stop
