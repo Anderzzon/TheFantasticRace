@@ -8,12 +8,15 @@ import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ImageButton
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.viewpager.widget.PagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.erikwestervind.thefantasticrace.Adapter.PagerViewAdapter
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 //const val SHOW_NEXT_STOP_DIRECT = 0
 //const val SHOW_NEXT_STOP_WITH_DELAY = 1
@@ -29,6 +32,8 @@ class ActiveGameActivity : AppCompatActivity() {
     private lateinit var mPagerViewAdapter: PagerViewAdapter
 
     lateinit var gameId: String
+    lateinit var db: FirebaseFirestore
+    lateinit var auth: FirebaseAuth
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     lateinit var lastLocation: Location
@@ -39,28 +44,33 @@ class ActiveGameActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_active_game)
+        createLocationRequest()
+
+        db = FirebaseFirestore.getInstance()
+        auth = FirebaseAuth.getInstance()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
+                println("!!!! Location Callback")
                 super.onLocationResult(locationResult)
 
                 lastLocation = locationResult.lastLocation
 
             }
         }
-
         createLocationRequest()
 
         gameId = intent.getStringExtra(GAME_ID_KEY)
+        showFinishedMessage()
 
         //init views
         mViewPager = findViewById(R.id.mViewPager)
 
-        stopsBtn = findViewById<ImageButton>(R.id.stopsBtn)
-        mapBtn = findViewById<ImageButton>(R.id.mapsBtn)
-        playersBtn = findViewById<ImageButton>(R.id.playersBtn)
+        stopsBtn = findViewById(R.id.stopsBtn)
+        mapBtn = findViewById(R.id.mapsBtn)
+        playersBtn = findViewById(R.id.playersBtn)
 
         stopsBtn.setOnClickListener {
             mViewPager.currentItem = 0
@@ -119,6 +129,8 @@ class ActiveGameActivity : AppCompatActivity() {
     }
 
     private fun createLocationRequest() {
+
+        println("!!!! Creating location request")
         // 1
         locationRequest = LocationRequest()
         // 2
@@ -157,6 +169,7 @@ class ActiveGameActivity : AppCompatActivity() {
     }
 
     private fun startLocationUpdates() {
+        println("!!!! In fun startLocationUpdates")
         //1
         if (ActivityCompat.checkSelfPermission(this,
                 android.Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -164,15 +177,18 @@ class ActiveGameActivity : AppCompatActivity() {
                 arrayOf(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION),
                 ActiveGameActivity.LOCATION_PERMISSION_REQUEST_CODE
             )
+            println("!!!! Request permissions")
             return
         }
         //2
+        println("!!!! requestLocationUpdates")
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
-        println("!!! " + fusedLocationClient.lastLocation)
+        println("!!!! " + fusedLocationClient.lastLocation)
 
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        println("!!!! in onActivityResult")
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CHECK_SETTINGS) {
             if (resultCode == Activity.RESULT_OK) {
@@ -184,14 +200,69 @@ class ActiveGameActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        println("!!!! in onPause")
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     public override fun onResume() {
         super.onResume()
+        println("!!!! in onResume")
         if (!locationUpdateState) {
             startLocationUpdates()
         }
+    }
+
+    private fun showFinishedMessage() {
+        val user = auth.currentUser
+
+        db.collection("users").document(user!!.uid).collection("races_invited")
+            .whereEqualTo("parent_race", gameId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    println("!!!! Listen failed ${e}")
+                }
+                if (snapshot != null) {
+                    for (document in snapshot.documents) {
+                        val game = document.toObject(GameInfo::class.java)
+                        if (game != null) {
+                            if (game.gameFinished == true) {
+                                title = "Finished: ${game.name!!.capitalize()}"
+                                finishedMessage()
+                            } else {
+                                title = game.name!!.capitalize()
+                            }
+                        }
+                        if (e != null) {
+                            println("!!!! Listen failed ${e}")
+                        }
+
+                    }
+                }
+            }
+    }
+
+
+    private fun finishedMessage() {
+        val builder = AlertDialog.Builder(this@ActiveGameActivity)
+
+        // Set the alert dialog title
+        builder.setTitle("Game finished!")
+
+        // Display a message on alert dialog
+        builder.setMessage("You have finished this race! Well done! ")
+
+        // Set a positive button and its click listener on alert dialog
+        builder.setPositiveButton("OK"){dialog, which ->
+            // Do something when user press the positive button
+
+            // Change the app background color
+        }
+
+        // Finally, make the alert dialog using builder
+        val dialog: AlertDialog = builder.create()
+
+        // Display the alert dialog on app interface
+        dialog.show()
     }
 
     companion object {

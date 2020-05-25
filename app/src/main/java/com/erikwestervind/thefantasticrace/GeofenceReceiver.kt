@@ -3,6 +3,7 @@ package com.erikwestervind.thefantasticrace
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.appcompat.app.AlertDialog
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.google.firebase.auth.FirebaseAuth

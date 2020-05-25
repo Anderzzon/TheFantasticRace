@@ -1,5 +1,6 @@
 package com.erikwestervind.thefantasticrace
 
+import android.content.IntentSender
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -13,6 +14,7 @@ data class GameInfo(var name: String? = null,
                var parent_race: String? = null,
                var start_time: Date? = null,
                var finishedStops: Int? = null,
+               var gameFinished: Boolean? = null,
                var latestUpdated: Date? = null,
                var listOfPlayers: ArrayList<String>? = null){
 }

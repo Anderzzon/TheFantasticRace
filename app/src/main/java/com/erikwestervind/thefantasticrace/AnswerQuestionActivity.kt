@@ -1,11 +1,13 @@
 package com.erikwestervind.thefantasticrace
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -54,13 +56,12 @@ class AnswerQuestionActivity : AppCompatActivity() {
                     val answer = answerQuestion(question.answer!!)
                     if (answer == true) {
                         updateVisit(gameID)
+                        finish()
                     }
                 }
                 println("!!! Answer is ${question.answer}")
             }
         }
-
-
     }
 
     private fun getLocationInfo(uid: String) {
@@ -85,6 +86,9 @@ class AnswerQuestionActivity : AppCompatActivity() {
                     if (questionFB.question != null) {
                         if (question.entered == true) {
                             questionTextView.text = questionFB.question
+                        } else {
+                            val notEnteredMessage = "You need to get get closer"
+                            Snackbar.make(findViewById(R.id.answerButton), notEnteredMessage, Snackbar.LENGTH_INDEFINITE).show()
                         }
                     }
                     index = question.order!!
@@ -99,7 +103,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
             if (question!! == answerInput) {
                 println("!!! Correct answeer")
                 val correct = "Correct answer"
-                Snackbar.make(findViewById(R.id.answerButton), correct, Snackbar.LENGTH_LONG).show()
+                Toast.makeText(this, correct, Toast.LENGTH_LONG).show()
                 return true
             }
         println("!!! Wrong answer")

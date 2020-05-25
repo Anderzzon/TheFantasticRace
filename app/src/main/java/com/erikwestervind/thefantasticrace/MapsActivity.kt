@@ -41,7 +41,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private var locationUpdateState = false
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
-    lateinit var gameInfo: GameInfo //Remove
+    lateinit var gameInfo: GameInfo //Remove?
     lateinit var gameId: String
     var gameLocations = mutableListOf<GameLocation>()
 

@@ -63,8 +63,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             googleMap -> map = googleMap
             map.isMyLocationEnabled = true
 
-
-
             mapIsReady = true
 
             mapHintTextView = view!!.findViewById(R.id.mapHintTextView)
@@ -88,10 +86,11 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             }
 
 
-            updateMap()
+
         }
         //gameId = intent.getStringExtra(GAME_ID_KEY)
-        gameId = "q6ou5AIikGUM5tSOY1Bw"
+        //gameId = "q6ou5AIikGUM5tSOY1Bw"
+        gameId = (activity as ActiveGameActivity).gameId
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
         DataManager.locations
@@ -107,7 +106,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        //updateMap()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -121,11 +120,12 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 //        val luma = LatLng(59.304568, 18.094541)
 //        map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
 //        map.moveCamera(CameraUpdateFactory.newLatLngZoom(luma, 12.0f))
-
         lastLocation = (activity as ActiveGameActivity).lastLocation
-        val currentLatLng = LatLng(lastLocation.latitude, lastLocation.longitude)
-        //placeMarkerOnMap(currentLatLng)
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
+
+            val currentLatLng = LatLng(lastLocation.latitude, lastLocation.longitude)
+            //placeMarkerOnMap(currentLatLng)
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
+
 
     }
 
@@ -142,9 +142,11 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                         DataManager.gameInfo = game
                         //setTitle(gameInfo.name!!.capitalize())
                         println("!!! Game info: ${game}")
+
                     }
                     //Get and update locations when the game info is collected
                     getLocations()
+
 
                 }
             }.addOnFailureListener { exception ->
