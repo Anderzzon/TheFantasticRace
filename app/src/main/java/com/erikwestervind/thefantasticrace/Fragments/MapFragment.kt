@@ -63,6 +63,8 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             googleMap -> map = googleMap
             map.isMyLocationEnabled = true
 
+
+
             mapIsReady = true
 
             mapHintTextView = view!!.findViewById(R.id.mapHintTextView)
@@ -86,7 +88,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             }
 
 
-            //updateMap()
+            updateMap()
         }
         //gameId = intent.getStringExtra(GAME_ID_KEY)
         gameId = "q6ou5AIikGUM5tSOY1Bw"
@@ -103,6 +105,11 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         return rootView
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+    }
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         activity.let {
@@ -111,9 +118,15 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     }
 
     private fun updateMap() {
-        val luma = LatLng(59.304568, 18.094541)
-        map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(luma, 12.0f))
+//        val luma = LatLng(59.304568, 18.094541)
+//        map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
+//        map.moveCamera(CameraUpdateFactory.newLatLngZoom(luma, 12.0f))
+
+        lastLocation = (activity as ActiveGameActivity).lastLocation
+        val currentLatLng = LatLng(lastLocation.latitude, lastLocation.longitude)
+        //placeMarkerOnMap(currentLatLng)
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
+
     }
 
     private fun getGameInfo() {
@@ -287,9 +300,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
                 DataManager.markers[i].setIcon(BitmapDescriptorFactory.fromBitmap(
                     BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_checked)))
-
-
-
 
 
             }

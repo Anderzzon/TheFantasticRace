@@ -23,6 +23,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
     var answerInput = ""
     val GAME_STRING = "GAMEID"
     val MARKER_STRING = "MARKER"
+    var markerIndex = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +53,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
                     if (question.entered == true) {
                     val answer = answerQuestion(question.answer!!)
                     if (answer == true) {
-                        updateVisit()
+                        updateVisit(gameID)
                     }
                 }
                 println("!!! Answer is ${question.answer}")
@@ -76,6 +77,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
                     question = questionFB
                     showHideViews()
                     title = questionFB.name!!.capitalize()
+                    markerIndex = questionFB.order!!
 
                     if (question.hint != null) {
                         hintTextView.text = questionFB.hint
@@ -84,7 +86,6 @@ class AnswerQuestionActivity : AppCompatActivity() {
                         if (question.entered == true) {
                             questionTextView.text = questionFB.question
                         }
-
                     }
                     index = question.order!!
                 }
@@ -108,7 +109,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
 
     }
 
-    private fun updateVisit() {
+    private fun updateVisit(game: String) {
         val user = auth.currentUser
         val locationRef =
             db.collection("users").document(user!!.uid).collection("places").document(locationID)
@@ -116,8 +117,38 @@ class AnswerQuestionActivity : AppCompatActivity() {
             .update("visited", true)
             .addOnSuccessListener {
                 println("!!! DocumentSnapshot successfully updated!")
+                updateScore(game)
+
             }
             .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+
+    }
+
+    private fun updateScore(game: String) {
+        val user = auth.currentUser
+        db.collection("users").document(user!!.uid).collection("races_invited")
+            .whereEqualTo("parent_race", game)
+            .get()
+            .addOnSuccessListener { documents ->
+                for(document in documents) {
+                    val game = document.toObject(GameInfo::class.java)
+                    if (game != null) {
+                        game.id = document.id
+                        val gameRef =
+                            db.collection("users").document(user!!.uid).collection("races_invited").document(game.id!!)
+                        gameRef
+                            .update("finishedStops", markerIndex + 1)
+                            .addOnSuccessListener {
+                                println("!!!! Marker Index DocumentSnapshot successfully updated!")
+                            }
+                            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+
+                    }
+
+                }
+            }.addOnFailureListener { exception ->
+                println("!!! get failed with  ${exception}")
+            }
     }
 
     private fun showHideViews() {

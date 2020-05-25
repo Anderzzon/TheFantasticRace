@@ -18,23 +18,26 @@ import kotlinx.android.synthetic.main.fragment_stops.*
 /**
  * A simple [Fragment] subclass.
  */
-class StopsFragment(id: String) : Fragment() {
+class StopsFragment : Fragment() {
     lateinit var recyclerView: RecyclerView
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
     //private var gameId: String? = id
 
-    private var gameId = "q6ou5AIikGUM5tSOY1Bw"
+    //private var gameId = "q6ou5AIikGUM5tSOY1Bw"
+    private var gameId: String? = null
     val stopItems = mutableListOf<GameLocation>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         retainInstance = true
     }
     override fun onCreateView(inflater: LayoutInflater,
                               container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
 
+        //Bundle doesn't work
 //        if(arguments != null) {
 //            gameId = arguments!!.getString("GAME_ID")
 //            println("!!! GameId in onCreate: ${gameId}")
@@ -43,21 +46,23 @@ class StopsFragment(id: String) : Fragment() {
         return inflater.inflate(R.layout.fragment_stops, container, false)
     }
 
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
 
+        gameId = (activity as ActiveGameActivity).gameId
         loadLocations()
+
+
+        println("!!! GameID from ActivityGame ${gameId}")
 
         //val view = inflater.inflate(R.layout.fragment_stops, container, false)
 
             recyclerView = view.findViewById<RecyclerView>(R.id.stopsList)
             recyclerView.layoutManager = LinearLayoutManager(activity)
             recyclerView.adapter = StopsListRecyclerAdapter(stopItems)
-
 
 }
 
@@ -83,22 +88,9 @@ class StopsFragment(id: String) : Fragment() {
                             println("!!! Stop added: ${newStop}")
 
                     }
-                    //When all locations are loaded or updated, Start game logic:
                 }
                     recyclerView.adapter?.notifyDataSetChanged()
             }
-        }
-    }
-    companion object {
-        private val GAME_ID = "gameId"
-
-        fun newInstance(id: String): StopsFragment {
-            val fragment = StopsFragment(GAME_ID)
-            val args = Bundle()
-            args.putString(GAME_ID, id)
-            fragment.arguments = args
-            println("!!! ID i Stops fragment: ${id}")
-            return fragment
         }
     }
 

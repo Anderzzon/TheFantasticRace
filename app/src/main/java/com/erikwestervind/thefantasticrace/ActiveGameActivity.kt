@@ -31,7 +31,7 @@ class ActiveGameActivity : AppCompatActivity() {
     lateinit var gameId: String
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var lastLocation: Location
+    lateinit var lastLocation: Location
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
     private var locationUpdateState = false
@@ -48,8 +48,6 @@ class ActiveGameActivity : AppCompatActivity() {
 
                 lastLocation = locationResult.lastLocation
 
-                //placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
-                //println("!!! " + lastLocation.latitude + " " + lastLocation.longitude)
             }
         }
 

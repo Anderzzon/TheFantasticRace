@@ -17,7 +17,6 @@ import com.google.firebase.Timestamp
 class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
     : RecyclerView.Adapter<StopsListRecyclerAdapter.ViewHolder>() {
     //private lateinit var pagerAdapter: StopsListRecyclerAdapter
-    private lateinit var id: String
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
 
