@@ -2,20 +2,16 @@ package com.erikwestervind.thefantasticrace.Fragments
 
 import android.app.PendingIntent
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
-import android.provider.ContactsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.fragment.app.Fragment
 import com.erikwestervind.thefantasticrace.*
 import com.erikwestervind.thefantasticrace.R
@@ -24,11 +20,11 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import kotlinx.android.synthetic.*
 
 
 /**
@@ -50,7 +46,14 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     lateinit var gameInfo: GameInfo //Remove
     lateinit var gameId: String
     lateinit var mapHintTextView: TextView
+    lateinit var timeToMarkerTextView: TextView
     var gameLocations = mutableListOf<GameLocation>()
+
+    internal val countDownStarted = false
+    internal lateinit var countDownTimer: CountDownTimer
+    internal var initialCountDown: Long = 600000
+    internal val countDownInterval: Long = 1000
+    var diff: Long = 600000
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -66,6 +69,8 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             mapIsReady = true
 
             mapHintTextView = view!!.findViewById(R.id.mapHintTextView)
+            timeToMarkerTextView = view!!.findViewById(R.id.timeToMarkerTextView)
+            timeToMarkerTextView.visibility = View.GONE
 
             googleMap.setOnMarkerClickListener { // Triggered when user click any marker on the map
 
@@ -265,23 +270,53 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     }
 
     private fun handleMarker(marker: Int) {
-        val timestamp = Timestamp.now()
-        val date = timestamp.toDate()
+        //val timestamp = Timestamp.now()
+        //val date = timestamp.toDate()
         if (gameInfo.show_next_stop == SHOW_NEXT_STOP_DIRECT) {
             DataManager.markers[marker].isVisible = true
         } else if (gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
 
             val currentTime = Timestamp.now().toDate().time
-            val endTime = DataManager.locations[marker].timestamp!!.time + 30000//600000
-            val diff = endTime - currentTime
+            val endTime = DataManager.locations[marker].timestamp!!.time + 600000//600000
+            diff = endTime - currentTime
+            println("!!!! Diff is: ${diff}")
             if (DataManager.locations[marker].hint != null) {
                 mapHintTextView.text = DataManager.locations[marker].hint!!
             }
+            if (diff > 0) {
+                timeToMarkerTextView.visibility = View.VISIBLE
+                initialCountDown = diff
+                println("!!!! Countdown time: ${initialCountDown/1000}")
+                startCountDownTimer(marker)
+                countDownTimer.start()
+            } else {
+                DataManager.markers[marker].isVisible = true
+            }
+
 
             Handler().postDelayed({
-                DataManager.markers[marker].isVisible = true
+                //DataManager.markers[marker].isVisible = true
             }, diff)
         }
+    }
+
+    private fun startCountDownTimer(marker: Int) {
+        timeToMarkerTextView.text = ""
+        println("!!!! initial countDown: ${initialCountDown}")
+        countDownTimer = object : CountDownTimer(initialCountDown, countDownInterval) {
+            override fun onTick(millisUntilFinished: Long) {
+                var timeLeft = millisUntilFinished / 1000
+                timeToMarkerTextView.text = "Next stop will be shown in: ${timeLeft/60} min ${timeLeft%60} sec"
+            }
+
+            override fun onFinish() {
+                timeToMarkerTextView.visibility = View.GONE
+                DataManager.markers[marker].isVisible = true
+                val snackMessage = "Next stop now visible on map"
+
+            }
+        }
+
     }
 
     private fun runGame() {
@@ -296,13 +331,8 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 //DataManager.markers[i].remove()
                 DataManager.markers[i].isVisible = true
 
-//                DataManager.markers[i].setIcon(
-//                    BitmapDescriptorFactory.defaultMarker(
-//                        BitmapDescriptorFactory.HUE_GREEN))
-
                 DataManager.markers[i].setIcon(BitmapDescriptorFactory.fromBitmap(
                     BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_checked)))
-
 
             }
             //Set up current stop
@@ -343,18 +373,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
         geofences.add(geofence)
 
-//        geofences = DataManager.locations.map {
-//
-//            val coords = LatLng(it.latitude!!, it.longitude!!)
-//            println("!!! Geonfece created: " + it.name)
-//            Geofence.Builder()
-//                .setRequestId(it.name)
-//                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-//                .setCircularRegion(coords.latitude, coords.longitude, 200.0f)
-//                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-//                .build()
-//
-//        }
         geofences.forEach {
             println("!!! Geofence in geofences added: " + it.requestId)
             println("!!! Geofence list size: ${geofences.size}")
@@ -404,6 +422,11 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             println("!!! Marker snippet ${marker.snippet}")
         }
         return true
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        countDownTimer.cancel()
     }
 
 }

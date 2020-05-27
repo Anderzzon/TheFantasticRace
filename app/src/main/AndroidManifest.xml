@@ -16,23 +16,26 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ActiveGameActivity"></activity>
+        <activity android:name=".ActiveGameActivity">
+        </activity>
+
         <activity
             android:name=".GameListActivity"
             android:theme="@style/AppTheme.NoActionBar">
-
         </activity>
+
         <activity android:name=".SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".AnswerQuestionActivity"
-            android:parentActivityName=".MapsActivity"
+            android:parentActivityName=".ActiveGameActivity"
             android:windowSoftInputMode="adjustResize" />
+
         <activity android:name=".LoginActivity" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -48,11 +51,9 @@
 
         <activity
             android:name=".MapsActivity"
-            android:label="@string/title_activity_maps"
-            android:parentActivityName=".GameListActivity">
+            android:label="@string/title_activity_maps">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

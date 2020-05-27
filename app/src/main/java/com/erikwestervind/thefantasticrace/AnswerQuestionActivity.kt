@@ -21,6 +21,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
     lateinit var questionTextView: TextView
     lateinit var answerView: EditText
     lateinit var answerButton: Button
+    lateinit var answerTextView: TextView
     lateinit var question: GameLocation
     var answerInput = ""
     val GAME_STRING = "GAMEID"
@@ -39,16 +40,17 @@ class AnswerQuestionActivity : AppCompatActivity() {
         questionTextView = findViewById(R.id.textViewQuestion)
         answerView = findViewById(R.id.answerText)
         answerButton = findViewById(R.id.answerButton)
+        answerTextView = findViewById(R.id.answerTextView)
 
         questionTextView.visibility = View.GONE
         answerView.visibility = View.GONE
         answerButton.visibility = View.GONE
+        answerTextView.visibility = View.GONE
 
         val gameID = intent.getStringExtra(GAME_STRING)
         locationID = intent.getStringExtra(MARKER_STRING)
 
         getLocationInfo(locationID)
-
 
             answerButton.setOnClickListener {
                 if(question.answer != null) {
@@ -56,12 +58,18 @@ class AnswerQuestionActivity : AppCompatActivity() {
                     val answer = answerQuestion(question.answer!!)
                     if (answer == true) {
                         updateVisit(gameID)
+                        showHideViews()
                         finish()
                     }
                 }
                 println("!!! Answer is ${question.answer}")
             }
         }
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     private fun getLocationInfo(uid: String) {
@@ -166,6 +174,15 @@ class AnswerQuestionActivity : AppCompatActivity() {
                 questionTextView.visibility = View.VISIBLE
                 answerView.visibility = View.VISIBLE
                 answerButton.visibility = View.VISIBLE
+            }
+            if (question.visited) {
+                answerView.visibility = View.GONE
+                answerButton.visibility = View.GONE
+                if (question.answer != null) {
+                    answerTextView.visibility = View.VISIBLE
+                    answerTextView.text = "You answered correct: ${question.answer!!.capitalize()}"
+                }
+
             }
         }
     }

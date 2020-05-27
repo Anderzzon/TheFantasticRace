@@ -44,6 +44,7 @@ class ActiveGameActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_active_game)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         createLocationRequest()
 
         db = FirebaseFirestore.getInstance()
@@ -53,7 +54,7 @@ class ActiveGameActivity : AppCompatActivity() {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                println("!!!! Location Callback")
+                //println("!!!! Location Callback")
                 super.onLocationResult(locationResult)
 
                 lastLocation = locationResult.lastLocation
@@ -107,6 +108,11 @@ class ActiveGameActivity : AppCompatActivity() {
         //default tab
         mViewPager.currentItem = 1
         mapBtn.setImageResource(R.drawable.ic_map_white_24dp)
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     private fun changingTabs(position: Int) {
