@@ -9,6 +9,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -49,6 +50,8 @@ class AnswerQuestionActivity : AppCompatActivity() {
 
         val gameID = intent.getStringExtra(GAME_STRING)
         locationID = intent.getStringExtra(MARKER_STRING)
+
+        DataManager.locations
 
         getLocationInfo(locationID)
 
@@ -118,7 +121,6 @@ class AnswerQuestionActivity : AppCompatActivity() {
         val wrongAnswer = "Wrong answer"
         Snackbar.make(findViewById(R.id.answerButton), wrongAnswer, Snackbar.LENGTH_INDEFINITE).show()
         return false
-
     }
 
     private fun updateVisit(game: String) {
@@ -154,6 +156,10 @@ class AnswerQuestionActivity : AppCompatActivity() {
                                 println("!!!! Marker Index DocumentSnapshot successfully updated!")
                             }
                             .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+                        if (markerIndex == DataManager.locations.size-1) {
+                            gameRef
+                                .update("finished_time", Timestamp.now())
+                        }
 
                     }
 

@@ -129,7 +129,7 @@ class PlayersFragment : Fragment() {
                             }
                         }
                         players.add(user)
-                        getGameInfo(uid, index)
+                        //getGameInfo(uid, index)
                         println("!!!! Player added: ${user.name}")
 
                     }

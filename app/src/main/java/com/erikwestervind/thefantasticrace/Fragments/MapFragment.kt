@@ -5,12 +5,11 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.location.Location
-import android.os.Bundle
-import android.os.CountDownTimer
-import android.os.Handler
+import android.os.*
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.erikwestervind.thefantasticrace.*
@@ -25,6 +24,8 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import android.widget.Chronometer
+import androidx.annotation.RequiresApi
 
 
 /**
@@ -54,6 +55,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     internal var initialCountDown: Long = 600000
     internal val countDownInterval: Long = 1000
     var diff: Long = 600000
+    lateinit var timer: Chronometer
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -71,6 +73,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             mapHintTextView = view!!.findViewById(R.id.mapHintTextView)
             timeToMarkerTextView = view!!.findViewById(R.id.timeToMarkerTextView)
             timeToMarkerTextView.visibility = View.GONE
+            timer = view!!.findViewById(R.id.timer)
 
             googleMap.setOnMarkerClickListener { // Triggered when user click any marker on the map
 
@@ -151,6 +154,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                     }
                     //Get and update locations when the game info is collected
                     getLocations()
+                    showElapsedTime(gameInfo.start_time!!.time)
 
 
                 }
@@ -294,9 +298,9 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             }
 
 
-            Handler().postDelayed({
+            //Handler().postDelayed({
                 //DataManager.markers[marker].isVisible = true
-            }, diff)
+            //}, diff)
         }
     }
 
@@ -351,6 +355,26 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 createGeofence(i, radius)
                 handleMarker(i)
                 return
+            }
+        }
+    }
+
+    private fun showElapsedTime(startTime: Long) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val currentTime = Timestamp.now()
+            val baseTime = currentTime.toDate().time - startTime
+
+            //timer.base = baseTime - currentTime.toDate()
+            //timer.base =  - baseTime
+            timer.base = SystemClock.elapsedRealtime() - baseTime
+            println("!!!! baseTime: ${baseTime}")
+            println("!!!! Internal clock: ${SystemClock.elapsedRealtime()}")
+            println("!!!! Firebase clock: ${Timestamp.now()}")
+
+            timer.isCountDown = false
+
+            if (gameInfo.finished_time == null) {
+                timer.start()
             }
         }
     }
@@ -426,7 +450,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        countDownTimer.cancel()
+        //countDownTimer.cancel()
     }
 
 }

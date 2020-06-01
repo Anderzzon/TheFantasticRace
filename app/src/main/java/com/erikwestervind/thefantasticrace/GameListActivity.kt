@@ -22,6 +22,8 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
     val gameItems = mutableListOf<GameInfo>()
+    val gameInvites = mutableListOf<GameInfo>()
+    var currentPlayer: Player? = null
 
     //Navigation:
     lateinit var toolbar: Toolbar
@@ -38,6 +40,8 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
         auth = FirebaseAuth.getInstance()
 
         loadGames()
+        loadInvitations()
+        //loadInvitation()
 
         recyclerView = findViewById<RecyclerView>(R.id.gamesList)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -103,16 +107,128 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                         }
                     }
                     recyclerView.adapter?.notifyDataSetChanged()
-                    println("!!! Recycler view updated")
+                    println("!!!! Recycler view updated")
                 }
                 if(e != null) {
-                    println("!!! Listen failed ${e}")
+                    println("!!!! Listen failed in load games: ${e}")
                 }
+            }
+    }
+
+    private fun loadInvitations() {
+        val user = auth.currentUser
+        val uid = user!!.uid!!
+        println("!!!! User uid: ${uid}")
+        gameInvites.clear()
+
+        db.collection("races")//.document(user!!.uid).collection("races_invited")
+            .whereArrayContains("invites", uid)
+            .addSnapshotListener { snapshot, e ->
+                if (snapshot != null) {
+                    for(document in snapshot.documents) {
+                        val game = document.toObject(GameInfo::class.java)
+                        if(game != null) {
+                            println("!!!! User uid: ${uid}")
+                            gameInvites.add(game)
+                            createGameFromInvitation(game)
+                            println("!!!! Game name: ${game.name}")
+                        }
+                    }
+                    println("!!!! invites fetched")
+
+                }
+                if(e != null) {
+                    println("!!!! Listen failed in load invitations ${e}")
+                }
+            }
+    }
+
+    private fun createGameFromInvitation(game: GameInfo) {
+        val gameExists = checkForExistingGame(game)
+        if (!gameExists) {
+            val user = auth.currentUser
+            val gameToAdd = hashMapOf(
+                "name" to game.name,
+                "description" to game.description,
+                "parent_race" to game.id,
+                "gameFinished" to false,
+                "radius" to game.radius,
+                "show_next_stop" to game.show_next_stop,
+                "show_players_on_map" to game.show_players_map,
+                "start_time" to game.start_time,
+                "unlock_with_question" to game.unlock_with_question
+            )
+            db.collection("users").document(user!!.uid).collection("races_invited").document()
+                .set(gameToAdd)
+                .addOnSuccessListener {
+                    println("!!!! Game saved")
+                }
+                .addOnFailureListener {e ->
+                    println("!!!! Error saving game: ${e}")
+                }
+//            val userToAdd = hashMapOf(
+//
+//            )
+        }
+
+    }
+
+    private fun checkForExistingGame(game: GameInfo) : Boolean {
+        var gameExists = true
+        val user = auth.currentUser
+
+        val gameRef = db.collection("users").document(user!!.uid).collection("races_invited")
+            .whereEqualTo("parent_race", game.id)
+        gameRef.get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    println("!!!! game already exists")
+                    gameExists = true
+                } else if (document == null) {
+                    println("!!!! game doesn't exist")
+                    gameExists = false
+                }
+            }
+            .addOnFailureListener { e ->
+                println("!!!! Listen failed ${e}" )
+            }
+        return gameExists
+    }
+
+    private fun loadInvitation() { //Not used
+        val user = auth.currentUser
+        val uid = user!!.uid!!
+        println("!!!! User uid: ${uid}")
+
+        val gameRef = db.collection("races").document("da5MBauttD6H5MuD5dfG")
+        gameRef.get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    println("!!!! invites fetched")
+                }
+            }
+            .addOnFailureListener { e ->
+                println("!!!! Listen failed ${e}" )
             }
     }
 
     private fun loadProfile() {
 
+        val user = auth.currentUser
+        val uid = user!!.uid!!
+        println("!!!! User uid: ${uid}")
+
+        val userRef = db.collection("users").document(user.uid)
+        userRef.get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    currentPlayer = document.toObject(Player::class.java)
+                    println("!!!! invites fetched")
+                }
+            }
+            .addOnFailureListener { e ->
+                println("!!!! Listen failed ${e}" )
+            }
     }
 
     private fun signOut() {
