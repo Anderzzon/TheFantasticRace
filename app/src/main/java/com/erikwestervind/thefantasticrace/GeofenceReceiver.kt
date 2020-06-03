@@ -3,9 +3,11 @@ package com.erikwestervind.thefantasticrace
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -28,6 +30,7 @@ class GeofenceReceiver: BroadcastReceiver() {
             geofencingEvent.triggeringGeofences.forEach {
                val geofence = it.requestId
                 updateLocation(geofence)
+
                 println("!!! Geofence entered: " + geofence)
 
                 val geofenceTransition = geofencingEvent.geofenceTransition
@@ -64,10 +67,10 @@ class GeofenceReceiver: BroadcastReceiver() {
 
     }
 
-    private fun updateLocation(uid:String) {
+    private fun updateLocation(id:String) {
         val user = auth.currentUser
         var index:Int
-        val locationRef = db.collection("users").document(user!!.uid).collection("places").document(uid)
+        val locationRef = db.collection("users").document(user!!.uid).collection("places").document(id)
         locationRef
             .get()
             .addOnSuccessListener { document ->
@@ -82,6 +85,12 @@ class GeofenceReceiver: BroadcastReceiver() {
                         }
                         locationRef
                             .update("entered", true)
+
+                        if (index == DataManager.locations.size-1) {
+                            locationRef
+                                .update("visited", true)
+                            finishGame()
+                        }
                         //DataManager.markers[index].isVisible = true
                     } else {
                         locationRef
@@ -94,6 +103,16 @@ class GeofenceReceiver: BroadcastReceiver() {
                     }
                 }
             }
+    }
+
+    private fun finishGame() {
+        val user = auth.currentUser
+        val gameRef =
+            db.collection("users").document(user!!.uid).collection("races_invited").document(DataManager.gameInfo.id!!)
+        gameRef
+            .update("finished_time", Timestamp.now())
+        gameRef
+            .update("gameFinished", true)
     }
 
 }

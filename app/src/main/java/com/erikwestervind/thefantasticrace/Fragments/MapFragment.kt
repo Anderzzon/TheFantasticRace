@@ -28,6 +28,8 @@ import android.widget.Chronometer
 import androidx.annotation.RequiresApi
 
 
+const val GEOFENCE_TRANSITION_ENTER = 10000
+
 /**
  * A simple [Fragment] subclass.
  */
@@ -55,6 +57,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     internal var initialCountDown: Long = 600000
     internal val countDownInterval: Long = 1000
     var diff: Long = 600000
+
     lateinit var timer: Chronometer
 
     override fun onCreateView(
@@ -147,6 +150,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                     val game = document.toObject(GameInfo::class.java)
                     if (game != null) {
                         gameInfo =game //Remove
+                        game.id = document.id
                         DataManager.gameInfo = game
                         //setTitle(gameInfo.name!!.capitalize())
                         println("!!! Game info: ${game}")
@@ -176,7 +180,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 DataManager.markers.clear()
                 DataManager.circlesOptions.clear()
                 DataManager.circles.clear()
-                map.clear() //Testing
+                //map.clear() //Testing
                 for(document in documents) {
                     val newStop = document.toObject(GameLocation::class.java)
 
@@ -208,7 +212,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                         //placeMarkerOnMap(LatLng(newStop.latitude!!, newStop.longitude!!))
                     }
                 }
-                println("!!! Antal locations: ${DataManager.locations.size}")
+                println("!!!! Antal locations: ${DataManager.locations.size}")
                 addMarkersToMap()
                 addGeofenceCircle()
 
@@ -281,7 +285,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         } else if (gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
 
             val currentTime = Timestamp.now().toDate().time
-            val endTime = DataManager.locations[marker].timestamp!!.time + 600000//600000
+            val endTime = DataManager.locations[marker].timestamp!!.time + 60000//600000
             diff = endTime - currentTime
             println("!!!! Diff is: ${diff}")
             if (DataManager.locations[marker].hint != null) {
@@ -328,7 +332,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         val nextStopSetting = gameInfo.show_next_stop
         val radius: Float = (gameInfo.radius)!!.toFloat()
 
-        for (i in 0..DataManager.locations.size) {
+        for (i in 0..DataManager.locations.size-1) {
             //Change visited stops if any:
             if (DataManager.locations[i].visited == true) {
                 DataManager.circles[i].isVisible = false
@@ -351,7 +355,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                     locationRef
                         .update("timestamp", timestamp)
                 }
-
                 createGeofence(i, radius)
                 handleMarker(i)
                 return

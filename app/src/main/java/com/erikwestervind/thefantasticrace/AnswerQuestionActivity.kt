@@ -98,7 +98,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
                         if (question.entered == true) {
                             questionTextView.text = questionFB.question
                         } else {
-                            val notEnteredMessage = "You need to get get closer"
+                            val notEnteredMessage = "You need to get closer"
                             Snackbar.make(findViewById(R.id.answerButton), notEnteredMessage, Snackbar.LENGTH_INDEFINITE).show()
                         }
                     }

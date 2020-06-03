@@ -26,7 +26,7 @@ class GameListRecyclerAdapter (private val context: Context, private val games: 
         val game = games[position]
         holder.textName.text = game.name
         holder.textDescription?.text = game.description
-        holder.itemID = game.parent_race!!
+        holder.itemID = game.parent_race
         holder.gamePosition = position
 
     }
@@ -35,7 +35,7 @@ class GameListRecyclerAdapter (private val context: Context, private val games: 
         val textName = itemView.findViewById<TextView>(R.id.stopNameTextView)
         val textDescription = itemView.findViewById<TextView>(R.id.descriptionTextView)
         var gamePosition = 0
-        var itemID = ""
+        var itemID: String? = null
 
 
         init {
