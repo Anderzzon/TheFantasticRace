@@ -64,7 +64,7 @@ class PlayersFragment : Fragment() {
 
     private fun loadPlayersInGame() {
         val user = auth.currentUser
-        db.collection("races").document("da5MBauttD6H5MuD5dfG").collection("users")
+        db.collection("races").document(gameId!!).collection("users")
             .addSnapshotListener { snapshot, e ->
                 if (snapshot != null) {
                     players.clear()
@@ -73,6 +73,7 @@ class PlayersFragment : Fragment() {
                         val newPlayer = document.toObject(Player::class.java)
                         if(newPlayer != null) {
                             players.add(newPlayer)
+                            println("!!!! Player added from snapshot")
                         }
                     }
                     recyclerView.adapter?.notifyDataSetChanged()

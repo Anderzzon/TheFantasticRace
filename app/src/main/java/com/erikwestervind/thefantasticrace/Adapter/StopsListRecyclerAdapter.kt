@@ -65,6 +65,7 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
                     //val intent = Intent(context, MapsActivity::class.java)
                     val intent = Intent(parent.context, AnswerQuestionActivity::class.java)
                     intent.putExtra("MARKER", stops[gamePosition].id)
+                    intent.putExtra("GAMEID", stops[gamePosition].race)
                     parent.context.startActivity(intent)
                 } else {
                     val message = Toast.makeText(parent.context, "You need to visit stop ${(gamePosition)}: ${stops[gamePosition-1].name!!.capitalize()} first", Toast.LENGTH_LONG)

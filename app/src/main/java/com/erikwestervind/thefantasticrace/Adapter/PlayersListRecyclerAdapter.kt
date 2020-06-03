@@ -25,7 +25,7 @@ class PlayersListRecyclerAdapter(private val players: List<Player>)
         val player = players[position]
 
             holder.playerNameTextView?.text = player.name!!.capitalize()
-            holder.scoreTextView?.text = player.finishedStops.toString()
+            holder.scoreTextView?.text = "${player.finishedStops.toString()}/${DataManager.locations.size} stops finished"
             holder.playerPosition = position
 
 

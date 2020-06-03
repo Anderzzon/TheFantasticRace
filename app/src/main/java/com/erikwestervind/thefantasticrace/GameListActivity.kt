@@ -246,7 +246,10 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                     println("!!!! Error saving invited game: ${e}")
                 }
             val player = hashMapOf(
-                "name" to user.displayName
+                "name" to user.displayName,
+                "email" to user.email,
+                "finishedStops" to 0,
+                "uid" to user.uid
             )
             db.collection("races").document(gameToCheck.id!!).collection("users").document(user.uid)
                 .set(player)

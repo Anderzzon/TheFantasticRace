@@ -195,6 +195,38 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                             .position(location)
                             .visible(false)
                             .snippet(newStop.id)
+                                if (newStop.order == 0) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_start)))
+                                } else if (newStop.order == 1) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_2)))
+                                } else if (newStop.order == 2) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_3)))
+                                } else if (newStop.order == 3) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_4)))
+                                } else if (newStop.order == 4) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_5)))
+                                } else if (newStop.order == 5) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_6)))
+                                } else if (newStop.order == 6) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_7)))
+                                } else if (newStop.order == 7) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_8)))
+                                } else if (newStop.order == 8) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_9)))
+                                } else if (newStop.order == 9) {
+                                    markerOption.icon(BitmapDescriptorFactory.fromBitmap(
+                                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_end)))
+                                }
+
                         DataManager.markerOptions.add(markerOption)
 
                         val radius = gameInfo.radius
@@ -280,6 +312,11 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     private fun handleMarker(marker: Int) {
         //val timestamp = Timestamp.now()
         //val date = timestamp.toDate()
+        if (marker == DataManager.markers.size-1) {
+            DataManager.markers[marker].setIcon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_2)))
+        }
+
         if (gameInfo.show_next_stop == SHOW_NEXT_STOP_DIRECT) {
             DataManager.markers[marker].isVisible = true
         } else if (gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
@@ -300,11 +337,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             } else {
                 DataManager.markers[marker].isVisible = true
             }
-
-
-            //Handler().postDelayed({
-                //DataManager.markers[marker].isVisible = true
-            //}, diff)
         }
     }
 

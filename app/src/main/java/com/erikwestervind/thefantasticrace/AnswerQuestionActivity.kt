@@ -24,6 +24,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
     lateinit var answerButton: Button
     lateinit var answerTextView: TextView
     lateinit var question: GameLocation
+    lateinit var gameID: String
     var answerInput = ""
     val GAME_STRING = "GAMEID"
     val MARKER_STRING = "MARKER"
@@ -48,7 +49,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
         answerButton.visibility = View.GONE
         answerTextView.visibility = View.GONE
 
-        val gameID = intent.getStringExtra(GAME_STRING)
+        gameID = intent.getStringExtra(GAME_STRING)
         locationID = intent.getStringExtra(MARKER_STRING)
 
         DataManager.locations
@@ -131,11 +132,24 @@ class AnswerQuestionActivity : AppCompatActivity() {
             .update("visited", true)
             .addOnSuccessListener {
                 println("!!! DocumentSnapshot successfully updated!")
-                updateScore(game)
+                //updateScore(game)
+                updatePlayerScore()
 
             }
             .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
 
+    }
+
+    private fun updatePlayerScore() {
+        val user = auth.currentUser
+        val playerRef =
+            db.collection("races").document(gameID).collection("users").document(user!!.uid)
+        playerRef
+            .update("finishedStops", markerIndex+1)
+            .addOnSuccessListener {
+                println("!!!! Player score successfully updated!")
+            }
+            .addOnFailureListener { e -> println("!!!! Error updating player ${e}") }
     }
 
     private fun updateScore(game: String) {
@@ -148,18 +162,27 @@ class AnswerQuestionActivity : AppCompatActivity() {
                     val game = document.toObject(GameInfo::class.java)
                     if (game != null) {
                         game.id = document.id
+                        val playerRef =
+                            db.collection("races").document(game.id!!).collection("users").document(user.uid)
+                        playerRef
+                            .update("finishedStops", markerIndex+1)
+                            .addOnSuccessListener {
+                                println("!!!! Player score successfully updated!")
+                            }
+                            .addOnFailureListener { e -> println("!!!! Error updating player ${e}") }
                         val gameRef =
                             db.collection("users").document(user!!.uid).collection("races_invited").document(game.id!!)
-                        gameRef
+/*                        gameRef
                             .update("finishedStops", markerIndex + 1)
                             .addOnSuccessListener {
                                 println("!!!! Marker Index DocumentSnapshot successfully updated!")
                             }
-                            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+                            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }*/
                         if (markerIndex == DataManager.locations.size-1) {
                             gameRef
                                 .update("finished_time", Timestamp.now())
                         }
+
 
                     }
 
