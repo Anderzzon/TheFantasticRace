@@ -74,6 +74,7 @@ class StopsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         println("!!!! In StopsFragment resume")
+        loadLocations()
         recyclerView.adapter?.notifyDataSetChanged()
     }
 

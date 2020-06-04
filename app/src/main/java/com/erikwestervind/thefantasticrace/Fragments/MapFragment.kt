@@ -108,7 +108,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         DataManager.circlesOptions
         DataManager.circles
 
-        loadPlayer()
+
         getGameInfo()
 
         return rootView
@@ -149,6 +149,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 }
                 if (snapshot != null) {
                     player = snapshot.toObject(Player::class.java)!!
+                    showElapsedTime(gameInfo.start_time!!.time)
                 }
             }
     }
@@ -171,7 +172,8 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                     }
                     //Get and update locations when the game info is collected
                     getLocations()
-                    showElapsedTime(gameInfo.start_time!!.time)
+                    loadPlayer()
+
 
 
                 }
@@ -292,6 +294,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                             if (stop.order == 0 && stop.timestamp == null) {
                                 stop.timestamp = gameInfo.start_time
                             }
+                            showElapsedTime(gameInfo.start_time!!.time)
                             println("!!! Updated: ${stop}")
                             println("!!! ID Updated: ${stop.id}")
 
@@ -424,6 +427,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
             if (player != null) {
                 if (player.gameFinished == true) {
+                    timer.stop()
                     if (DataManager.gameInfo.start_time != null && player.finished_time != null) {
                         val startTime = DataManager.gameInfo.start_time!!.time
                         val endTime = player.finished_time!!.time
@@ -437,7 +441,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                         timer.text = "Finished in ${hours}:${min}:${sec}"
                         mapHintTextView.visibility = View.GONE
                     }
-                } else {
+                } else if (player.gameFinished == false) {
                     timer.start()
                 }
             }
@@ -456,8 +460,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 ?.addOnFailureListener { e ->
                     println("Error removing geofence: ${e}")}
         }
-
-
     }
 
     private fun createGeofence(stopIndex: Int, radius: Float) {

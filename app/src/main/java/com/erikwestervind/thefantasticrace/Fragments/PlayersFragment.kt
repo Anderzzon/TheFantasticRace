@@ -54,6 +54,7 @@ class PlayersFragment : Fragment() {
         //getPlayers()
 
 
+        loadPlayersInGame()
         println("!!!! GameID from ActivityGame ${gameId}")
 
         //val view = inflater.inflate(R.layout.fragment_stops, container, false)
@@ -62,10 +63,16 @@ class PlayersFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = PlayersListRecyclerAdapter(players)
 
+
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+
+    }
+
+    override fun onResume() {
+        super.onResume()
         loadPlayersInGame()
     }
 
@@ -73,7 +80,7 @@ class PlayersFragment : Fragment() {
         val user = auth.currentUser
         db.collection("races").document(gameId!!).collection("users")
             //.orderBy("finishedStops")
-            .orderBy("updated", Query.Direction.ASCENDING)
+            //.orderBy("updated", Query.Direction.ASCENDING)
             //.orderBy("finishedStops", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
                 if (snapshot != null) {

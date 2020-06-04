@@ -249,6 +249,8 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                 "name" to user.displayName,
                 "email" to user.email,
                 "finishedStops" to 0,
+                "gameFinished" to false,
+                "finished_time" to null,
                 "uid" to user.uid
             )
             db.collection("races").document(gameToCheck.id!!).collection("users").document(user.uid)
@@ -280,6 +282,7 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                             "longitude" to newStop.longitude,
                             "race" to newStop.race,
                             "order" to newStop.order,
+                            "timestamp" to null,
                             "visited" to false,
                             "entered" to false
                         )
