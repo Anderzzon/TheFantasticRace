@@ -25,18 +25,18 @@ class GeofenceReceiver: BroadcastReceiver() {
             //val errorMessage = GeofenceErrorMessages.getErrorString(this,
                 //geofencingEvent.errorCode)
             // display error
-            println("!!! Error ${geofencingEvent.errorCode}")
+            println("!!!! Error ${geofencingEvent.errorCode}")
         }
             geofencingEvent.triggeringGeofences.forEach {
                val geofence = it.requestId
                 updateLocation(geofence)
 
-                println("!!! Geofence entered: " + geofence)
+                println("!!!! Geofence entered: " + geofence)
 
                 val geofenceTransition = geofencingEvent.geofenceTransition
 
                 if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-                    println("!!! Geofence entered: " + geofence)
+                    println("!!!! Geofence entered: " + geofence)
                     }
 
                 // display notification
@@ -59,10 +59,10 @@ class GeofenceReceiver: BroadcastReceiver() {
             // multiple geofences.
 
 
-            println("!!! You have entered a geofence")
+            println("!!!! You have entered a geofence")
 
         } else {
-            println("!!! Error, not in a geofence")
+            println("!!!! Error, not in a geofence")
         }
 
     }
@@ -98,8 +98,8 @@ class GeofenceReceiver: BroadcastReceiver() {
                         locationRef
                             .update("visited", true)
                             .addOnSuccessListener {
-                                println("!!! DocumentSnapshot successfully updated!")}
-                            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
+                                println("!!!! DocumentSnapshot successfully updated!")}
+                            .addOnFailureListener { e -> println("!!!! Error updating document ${e}") }
                     }
                 }
             }
@@ -108,7 +108,7 @@ class GeofenceReceiver: BroadcastReceiver() {
     private fun finishGame() {
         val user = auth.currentUser
         val gameRef =
-            db.collection("users").document(user!!.uid).collection("races_invited").document(DataManager.gameInfo.id!!)
+            db.collection("races").document(DataManager.gameInfo.parent_race!!).collection("users").document(user!!.uid)
         gameRef
             .update("finished_time", Timestamp.now())
         gameRef

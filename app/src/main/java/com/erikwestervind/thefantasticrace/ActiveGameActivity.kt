@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
-import androidx.viewpager.widget.PagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.erikwestervind.thefantasticrace.Adapter.PagerViewAdapter
 import com.google.android.gms.common.api.ResolvableApiException
@@ -41,6 +40,8 @@ class ActiveGameActivity : AppCompatActivity() {
     private lateinit var locationRequest: LocationRequest
     private var locationUpdateState = false
 
+    lateinit var currentGame: GameInfo
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_active_game)
@@ -64,7 +65,7 @@ class ActiveGameActivity : AppCompatActivity() {
         createLocationRequest()
 
         gameId = intent.getStringExtra(GAME_ID_KEY)
-        showFinishedMessage()
+        updateTitle()
 
         //init views
         mViewPager = findViewById(R.id.mViewPager)
@@ -218,7 +219,7 @@ class ActiveGameActivity : AppCompatActivity() {
         }
     }
 
-    private fun showFinishedMessage() {
+    private fun updateTitle() {
         val user = auth.currentUser
 
         db.collection("users").document(user!!.uid).collection("races_invited")
@@ -229,19 +230,40 @@ class ActiveGameActivity : AppCompatActivity() {
                 }
                 if (snapshot != null) {
                     for (document in snapshot.documents) {
-                        val game = document.toObject(GameInfo::class.java)
-                        if (game != null) {
-                            if (game.gameFinished == true) {
-                                title = "Finished: ${game.name!!.capitalize()}"
-                                finishedMessage()
-                            } else {
-                                title = game.name!!.capitalize()
+                        if (document!= null) {
+                            currentGame = document.toObject(GameInfo::class.java)!!
+                            if (currentGame != null) {
+                                    title = currentGame.name!!.capitalize()
+
+                                updatePlayer()
+                            }
+                            if (e != null) {
+                                println("!!!! Listen failed ${e}")
                             }
                         }
-                        if (e != null) {
-                            println("!!!! Listen failed ${e}")
-                        }
+                    }
+                }
+            }
+    }
 
+    private fun updatePlayer() {
+        val user = auth.currentUser
+
+        db.collection("races").document(gameId).collection("users").document(user!!.uid)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    println("!!!! Listen failed ${e}")
+                }
+                if (snapshot != null) {
+                    val player = snapshot.toObject(Player::class.java)
+                    if (player != null) {
+                        if (player.gameFinished == true) {
+                            title = "Finished: ${currentGame.name!!.capitalize()}"
+                            finishedMessage()
+                        }
+                    }
+                    if (e != null) {
+                        println("!!!! Listen failed ${e}")
                     }
                 }
             }

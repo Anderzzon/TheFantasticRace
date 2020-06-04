@@ -48,6 +48,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     lateinit var auth: FirebaseAuth
     lateinit var gameInfo: GameInfo //Remove
     lateinit var gameId: String
+    lateinit var player: Player
     lateinit var mapHintTextView: TextView
     lateinit var timeToMarkerTextView: TextView
     var gameLocations = mutableListOf<GameLocation>()
@@ -95,9 +96,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 }
                 true
             }
-
-
-
         }
         //gameId = intent.getStringExtra(GAME_ID_KEY)
         //gameId = "q6ou5AIikGUM5tSOY1Bw"
@@ -110,6 +108,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         DataManager.circlesOptions
         DataManager.circles
 
+        loadPlayer()
         getGameInfo()
 
         return rootView
@@ -138,6 +137,20 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
 
 
+    }
+
+    private fun loadPlayer() {
+        val user = auth.currentUser
+
+        db.collection("races").document(gameId).collection("users").document(user!!.uid)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    println("!!!! Listen failed ${e}")
+                }
+                if (snapshot != null) {
+                    player = snapshot.toObject(Player::class.java)!!
+                }
+            }
     }
 
     private fun getGameInfo() {
@@ -305,7 +318,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             val circle = map.addCircle(circleOption)
             DataManager.circles.add(circle)
 
-            println("!!! circleOption added Position: ${circleOption.center}")
+            println("!!!! circleOption added Position: ${circleOption.center}")
         }
     }
 
@@ -314,7 +327,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         //val date = timestamp.toDate()
         if (marker == DataManager.markers.size-1) {
             DataManager.markers[marker].setIcon(BitmapDescriptorFactory.fromBitmap(
-                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_2)))
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_end)))
         }
 
         if (gameInfo.show_next_stop == SHOW_NEXT_STOP_DIRECT) {
@@ -374,6 +387,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 DataManager.markers[i].setIcon(BitmapDescriptorFactory.fromBitmap(
                     BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_checked)))
 
+                removeGeofence(DataManager.locations[i].id!!)
             }
             //Set up current stop
             else if (DataManager.locations[i].visited == false) {
@@ -408,10 +422,42 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
             timer.isCountDown = false
 
-            if (gameInfo.finished_time == null) {
-                timer.start()
+            if (player != null) {
+                if (player.gameFinished == true) {
+                    if (DataManager.gameInfo.start_time != null && player.finished_time != null) {
+                        val startTime = DataManager.gameInfo.start_time!!.time
+                        val endTime = player.finished_time!!.time
+                        val totalTime = (endTime - startTime)
+                        val totalTimeSec = totalTime/1000
+                        val hours = totalTimeSec/3600
+                        val totalMin = totalTimeSec%3600
+                        val min = totalMin/60
+                        val sec = totalMin%60
+
+                        timer.text = "Finished in ${hours}:${min}:${sec}"
+                        mapHintTextView.visibility = View.GONE
+                    }
+                } else {
+                    timer.start()
+                }
             }
         }
+    }
+
+    private fun removeGeofence(id: String) {
+
+        if (context != null) {
+            geofencingClient = LocationServices.getGeofencingClient(context!!)
+            geofencingClient
+                ?.removeGeofences(listOf(id))
+                ?.addOnSuccessListener {
+                    println("!!!! Geofence removed: ${id}")
+                }
+                ?.addOnFailureListener { e ->
+                    println("Error removing geofence: ${e}")}
+        }
+
+
     }
 
     private fun createGeofence(stopIndex: Int, radius: Float) {
@@ -419,7 +465,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             geofencingClient = LocationServices.getGeofencingClient(context!!)
         }
 
-        println("!!! stopIndex: ${stopIndex}")
+        println("!!!! stopIndex: ${stopIndex}")
 
         var geofences = mutableListOf<Geofence>()
         val coords = LatLng(DataManager.locations[stopIndex].latitude!!, DataManager.locations[stopIndex].longitude!!)
@@ -433,15 +479,15 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         geofences.add(geofence)
 
         geofences.forEach {
-            println("!!! Geofence in geofences added: " + it.requestId)
-            println("!!! Geofence list size: ${geofences.size}")
+            println("!!!! Geofence in geofences added: " + it.requestId)
+            println("!!!! Geofence list size: ${geofences.size}")
         }
 
         val geofencingRequest = GeofencingRequest.Builder().apply {
             setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
             addGeofence(geofence)
             //addGeofences(geofences)
-            println("!!! Geofence Request")
+            println("!!!! Geofence Request")
         }.build()
 
         val geofencePendingIntent: PendingIntent by lazy {
@@ -453,14 +499,14 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         geofencingClient = LocationServices.getGeofencingClient(context!!)
 
         geofencingClient!!.addGeofences(geofencingRequest, geofencePendingIntent).run {
-            addOnFailureListener {
-                println("!!! Error adding intent")
+            addOnFailureListener { e ->
+                println("!!!! Error adding intent ${e}")
             }
             addOnSuccessListener {
                 //map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
                 //println("!!! Intent added")
             }
-            println("!!! Request and Intent added")
+            println("!!!! Request and Intent added")
         }
 
     }
@@ -470,7 +516,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         val GAME_STRING = "GAMEID"
         val MARKER_STRING = "MARKER"
 
-        println("!!! Marker clicked!")
+        println("!!!! Marker clicked!")
 
         if (marker != null) {
             val intent = Intent(context, AnswerQuestionActivity::class.java).apply {
@@ -478,7 +524,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 putExtra(MARKER_STRING, marker.tag.toString())
             }
             startActivity(intent)
-            println("!!! Marker snippet ${marker.snippet}")
+            println("!!!! Marker snippet ${marker.snippet}")
         }
         return true
     }

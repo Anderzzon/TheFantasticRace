@@ -66,6 +66,17 @@ class StopsFragment : Fragment() {
 
 }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        loadLocations()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        println("!!!! In StopsFragment resume")
+        recyclerView.adapter?.notifyDataSetChanged()
+    }
+
     private fun loadLocations() {
         val user = auth.currentUser
         db.collection("users").document(user!!.uid).collection("places")
@@ -73,7 +84,7 @@ class StopsFragment : Fragment() {
             .orderBy("order")
             .addSnapshotListener { snapshot, e ->
                 if(e != null) {
-                    println("!!! Listen failed ${e}")
+                    println("!!!! Listen failed ${e}")
                 }
                 if (snapshot != null) {
                     stopItems.clear()
@@ -85,7 +96,7 @@ class StopsFragment : Fragment() {
                             newStop.id = document.id
 
                             stopItems.add(newStop)
-                            println("!!! Stop added: ${newStop}")
+                            println("!!!! Stop added: ${newStop}")
 
                     }
                 }

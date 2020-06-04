@@ -134,6 +134,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
                 println("!!! DocumentSnapshot successfully updated!")
                 //updateScore(game)
                 updatePlayerScore()
+                //updateFinish()
 
             }
             .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
@@ -150,6 +151,28 @@ class AnswerQuestionActivity : AppCompatActivity() {
                 println("!!!! Player score successfully updated!")
             }
             .addOnFailureListener { e -> println("!!!! Error updating player ${e}") }
+        if (markerIndex == DataManager.locations.size-1) {
+            playerRef
+                .update("finished_time", Timestamp.now())
+                .addOnSuccessListener {
+                    println("!!!! Player finished updated!")
+                }
+                .addOnFailureListener { e -> println("!!!! Error updating player finish time ${e}") }
+        }
+    }
+
+    private fun updateFinish() {
+        val user = auth.currentUser
+        val playerRef =
+            db.collection("races").document(gameID).collection("users").document(user!!.uid)
+        if (markerIndex == DataManager.locations.size-1) {
+            playerRef
+                .update("finished_time", Timestamp.now())
+                .addOnSuccessListener {
+                    println("!!!! Player finished-time updated!")
+                }
+                .addOnFailureListener { e -> println("!!!! Error updating player finish time ${e}") }
+        }
     }
 
     private fun updateScore(game: String) {

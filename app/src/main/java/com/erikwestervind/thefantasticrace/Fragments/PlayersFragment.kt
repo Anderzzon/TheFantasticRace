@@ -1,5 +1,6 @@
 package com.erikwestervind.thefantasticrace.Fragments
 
+import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -13,6 +14,7 @@ import com.erikwestervind.thefantasticrace.Adapter.StopsListRecyclerAdapter
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 
 /**
  * A simple [Fragment] subclass.
@@ -50,7 +52,7 @@ class PlayersFragment : Fragment() {
         gameId = (activity as ActiveGameActivity).gameId
         //loadPlayers()
         //getPlayers()
-        loadPlayersInGame()
+
 
         println("!!!! GameID from ActivityGame ${gameId}")
 
@@ -62,9 +64,17 @@ class PlayersFragment : Fragment() {
 
     }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        loadPlayersInGame()
+    }
+
     private fun loadPlayersInGame() {
         val user = auth.currentUser
         db.collection("races").document(gameId!!).collection("users")
+            //.orderBy("finishedStops")
+            .orderBy("updated", Query.Direction.ASCENDING)
+            //.orderBy("finishedStops", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
                 if (snapshot != null) {
                     players.clear()
@@ -72,7 +82,11 @@ class PlayersFragment : Fragment() {
 
                         val newPlayer = document.toObject(Player::class.java)
                         if(newPlayer != null) {
+                            if (newPlayer.uid == user!!.uid) {
+                                newPlayer.name = "You"
+                            }
                             players.add(newPlayer)
+                            println("!!!! Player uid: ${newPlayer.uid}")
                             println("!!!! Player added from snapshot")
                         }
                     }

@@ -37,6 +37,7 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
 
         if (!stops[position].visited) {
             holder.checkMark.visibility = View.GONE
+            holder.stopNameTextView.visibility = View.VISIBLE
         }
         if (stops[position].timestamp == null) {
             holder.stopNumerTextView.setBackgroundResource(R.drawable.rounded_list_grey) //Sets circle to grey

@@ -27,8 +27,19 @@ class PlayersListRecyclerAdapter(private val players: List<Player>)
             holder.playerNameTextView?.text = player.name!!.capitalize()
             holder.scoreTextView?.text = "${player.finishedStops.toString()}/${DataManager.locations.size} stops finished"
             holder.playerPosition = position
-
-
+        if (player.finished_time != null) {
+            if (DataManager.gameInfo.start_time != null) {
+                val startTime = DataManager.gameInfo.start_time!!.time
+                val endTime = player.finished_time!!.time
+                val totalTime = (endTime - startTime)
+                val totalTimeSec = totalTime/1000
+                val hours = totalTimeSec/3600
+                val totalMin = totalTimeSec%3600
+                val min = totalMin/60
+                val sec = totalMin%60
+                holder.scoreTextView?.text = "Finished in ${hours} hours, ${min} min, ${sec} sec"
+            }
+        }
     }
 
     inner class ViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
