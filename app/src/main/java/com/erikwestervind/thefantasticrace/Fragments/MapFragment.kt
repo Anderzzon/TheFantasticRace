@@ -26,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import android.widget.Chronometer
 import androidx.annotation.RequiresApi
+import com.google.android.gms.maps.OnMapReadyCallback
 
 
 const val GEOFENCE_TRANSITION_ENTER = 10000
@@ -39,7 +40,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     private var mapIsReady = false
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var lastLocation: Location
+    var lastLocation: Location? = null
     var geofencingClient: GeofencingClient? = null
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
@@ -96,9 +97,21 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 }
                 true
             }
+            updateMap()
         }
-        //gameId = intent.getStringExtra(GAME_ID_KEY)
-        //gameId = "q6ou5AIikGUM5tSOY1Bw"
+
+
+        return rootView
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        activity.let {
+        }
+    }
+
+    private fun updateMap() {
+
         gameId = (activity as ActiveGameActivity).gameId
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
@@ -108,34 +121,22 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         DataManager.circlesOptions
         DataManager.circles
 
-
         getGameInfo()
-
-        return rootView
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        //updateMap()
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        activity.let {
-
-        }
-    }
-
-    private fun updateMap() {
 //        val luma = LatLng(59.304568, 18.094541)
 //        map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
 //        map.moveCamera(CameraUpdateFactory.newLatLngZoom(luma, 12.0f))
-        lastLocation = (activity as ActiveGameActivity).lastLocation
 
-            val currentLatLng = LatLng(lastLocation.latitude, lastLocation.longitude)
-            //placeMarkerOnMap(currentLatLng)
+
+
+        println()
+
+        println("!!!! Lastlocation before nullcheck: ${lastLocation}")
+        if(lastLocation != null) {
+            lastLocation = (activity as ActiveGameActivity).lastLocation
+            println("!!!! Lastlocation: ${lastLocation}")
+            val currentLatLng = LatLng(lastLocation!!.latitude, lastLocation!!.longitude)
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
-
+        }
 
     }
 
@@ -168,16 +169,13 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                         DataManager.gameInfo = game
                         //setTitle(gameInfo.name!!.capitalize())
                         println("!!! Game info: ${game}")
-
                     }
                     //Get and update locations when the game info is collected
                     getLocations()
                     loadPlayer()
-
-
-
                 }
-            }.addOnFailureListener { exception ->
+            }
+            .addOnFailureListener { exception ->
                 println("!!! get failed with  ${exception}")
             }
     }
@@ -195,7 +193,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 DataManager.markers.clear()
                 DataManager.circlesOptions.clear()
                 DataManager.circles.clear()
-                //map.clear() //Testing
+                map.clear() //Testing
                 for(document in documents) {
                     val newStop = document.toObject(GameLocation::class.java)
 
@@ -256,16 +254,13 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
                         DataManager.circlesOptions.add(circleOption)
                         println("!!! ${newStop}")
-                        //placeMarkerOnMap(LatLng(newStop.latitude!!, newStop.longitude!!))
                     }
                 }
                 println("!!!! Antal locations: ${DataManager.locations.size}")
                 addMarkersToMap()
                 addGeofenceCircle()
 
-                //StartGame and then listen for updates:
-                //runGame()
-                updateLocations()
+                updateLocations() //Look for updates
             }
             .addOnFailureListener { exception ->
                 println("!!! Error ${exception}")
@@ -297,7 +292,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                             showElapsedTime(gameInfo.start_time!!.time)
                             println("!!! Updated: ${stop}")
                             println("!!! ID Updated: ${stop.id}")
-
                         }
                     }
                     //When all locations are loaded or updated, Start game logic:
@@ -308,7 +302,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
     private fun addMarkersToMap() {
         for(markerOption in DataManager.markerOptions) {
-
             val marker = map.addMarker(markerOption)
             marker.tag = marker.snippet
             DataManager.markers.add(marker)
@@ -320,7 +313,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         for(circleOption in DataManager.circlesOptions) {
             val circle = map.addCircle(circleOption)
             DataManager.circles.add(circle)
-
             println("!!!! circleOption added Position: ${circleOption.center}")
         }
     }
@@ -338,7 +330,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         } else if (gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
 
             val currentTime = Timestamp.now().toDate().time
-            val endTime = DataManager.locations[marker].timestamp!!.time + 60000//600000
+            val endTime = DataManager.locations[marker].timestamp!!.time + 20000//600000
             diff = endTime - currentTime
             println("!!!! Diff is: ${diff}")
             if (DataManager.locations[marker].hint != null) {
@@ -369,10 +361,8 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 timeToMarkerTextView.visibility = View.GONE
                 DataManager.markers[marker].isVisible = true
                 val snackMessage = "Next stop now visible on map"
-
             }
         }
-
     }
 
     private fun runGame() {
@@ -415,13 +405,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val currentTime = Timestamp.now()
             val baseTime = currentTime.toDate().time - startTime
-
-            //timer.base = baseTime - currentTime.toDate()
-            //timer.base =  - baseTime
             timer.base = SystemClock.elapsedRealtime() - baseTime
-            println("!!!! baseTime: ${baseTime}")
-            println("!!!! Internal clock: ${SystemClock.elapsedRealtime()}")
-            println("!!!! Firebase clock: ${Timestamp.now()}")
 
             timer.isCountDown = false
 
@@ -438,7 +422,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                         val min = totalMin/60
                         val sec = totalMin%60
 
-                        timer.text = "Finished in ${hours}:${min}:${sec}"
+                        timer.text = "Finished in ${hours}h : ${min}m : ${sec}s"
                         mapHintTextView.visibility = View.GONE
                     }
                 } else if (player.gameFinished == false) {
@@ -466,7 +450,6 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         if (context != null) {
             geofencingClient = LocationServices.getGeofencingClient(context!!)
         }
-
         println("!!!! stopIndex: ${stopIndex}")
 
         var geofences = mutableListOf<Geofence>()
@@ -495,22 +478,20 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         val geofencePendingIntent: PendingIntent by lazy {
             val intent = Intent(context, GeofenceReceiver::class.java)
             PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-
         }
 
-        geofencingClient = LocationServices.getGeofencingClient(context!!)
+        if (context != null) {
+            geofencingClient = LocationServices.getGeofencingClient(context!!)
+        }
 
         geofencingClient!!.addGeofences(geofencingRequest, geofencePendingIntent).run {
             addOnFailureListener { e ->
                 println("!!!! Error adding intent ${e}")
             }
             addOnSuccessListener {
-                //map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
-                //println("!!! Intent added")
             }
             println("!!!! Request and Intent added")
         }
-
     }
 
     override fun onMarkerClick(marker: Marker?) : Boolean {
@@ -530,10 +511,4 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         }
         return true
     }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        //countDownTimer.cancel()
-    }
-
 }

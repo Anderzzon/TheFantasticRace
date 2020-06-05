@@ -16,7 +16,6 @@ import com.google.firebase.Timestamp
 
 class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
     : RecyclerView.Adapter<StopsListRecyclerAdapter.ViewHolder>() {
-    //private lateinit var pagerAdapter: StopsListRecyclerAdapter
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
 
@@ -33,16 +32,20 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
             holder.stopNameTextView?.text = stop.name!!.capitalize()
             holder.stopID = stop.id!!
             holder.gamePosition = position
-            holder.padlock.visibility = View.GONE
 
         if (!stops[position].visited) {
             holder.checkMark.visibility = View.GONE
             holder.stopNameTextView.visibility = View.VISIBLE
+            holder.stopNumerTextView.setBackgroundResource(R.drawable.rounded_list)
+            holder.padlock.visibility = View.GONE
 
         } else if (stops[position].visited) {
             holder.checkMark.visibility = View.VISIBLE
             holder.stopNumerTextView.setBackgroundResource(R.drawable.rounded_list)
-        } else if (stops[position].timestamp == null) {
+            holder.padlock.visibility = View.GONE
+
+        }
+        if (stops[position].timestamp == null) {
             holder.stopNumerTextView.setBackgroundResource(R.drawable.rounded_list_grey) //Sets circle to grey
             holder.stopNameTextView.visibility = View.GONE
             holder.padlock.visibility = View.VISIBLE
