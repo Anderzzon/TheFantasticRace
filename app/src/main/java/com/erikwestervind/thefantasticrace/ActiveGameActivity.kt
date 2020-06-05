@@ -181,7 +181,7 @@ class ActiveGameActivity : AppCompatActivity() {
         ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                arrayOf(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION),
                 ActiveGameActivity.LOCATION_PERMISSION_REQUEST_CODE
             )
             return
