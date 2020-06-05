@@ -1,6 +1,5 @@
 package com.erikwestervind.thefantasticrace
 
-import android.content.IntentSender
 import java.util.*
 import kotlin.collections.ArrayList
 

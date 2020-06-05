@@ -22,9 +22,7 @@ class StopsFragment : Fragment() {
     lateinit var recyclerView: RecyclerView
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
-    //private var gameId: String? = id
 
-    //private var gameId = "q6ou5AIikGUM5tSOY1Bw"
     private var gameId: String? = null
     val stopItems = mutableListOf<GameLocation>()
 
@@ -33,15 +31,12 @@ class StopsFragment : Fragment() {
 
         retainInstance = true
     }
-    override fun onCreateView(inflater: LayoutInflater,
-                              container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
 
-        //Bundle doesn't work
-//        if(arguments != null) {
-//            gameId = arguments!!.getString("GAME_ID")
-//            println("!!! GameId in onCreate: ${gameId}")
-//        }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
 
         return inflater.inflate(R.layout.fragment_stops, container, false)
     }
@@ -55,16 +50,10 @@ class StopsFragment : Fragment() {
         gameId = (activity as ActiveGameActivity).gameId
         loadLocations()
 
-
-        println("!!! GameID from ActivityGame ${gameId}")
-
-        //val view = inflater.inflate(R.layout.fragment_stops, container, false)
-
-            recyclerView = view.findViewById<RecyclerView>(R.id.stopsList)
-            recyclerView.layoutManager = LinearLayoutManager(activity)
-            recyclerView.adapter = StopsListRecyclerAdapter(stopItems)
-
-}
+        recyclerView = view.findViewById<RecyclerView>(R.id.stopsList)
+        recyclerView.layoutManager = LinearLayoutManager(activity)
+        recyclerView.adapter = StopsListRecyclerAdapter(stopItems)
+    }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -73,7 +62,6 @@ class StopsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        println("!!!! In StopsFragment resume")
         loadLocations()
         recyclerView.adapter?.notifyDataSetChanged()
     }
@@ -84,26 +72,22 @@ class StopsFragment : Fragment() {
             .whereEqualTo("race", gameId)
             .orderBy("order")
             .addSnapshotListener { snapshot, e ->
-                if(e != null) {
-                    println("!!!! Listen failed ${e}")
+                if (e != null) {
                 }
                 if (snapshot != null) {
                     stopItems.clear()
 
-                    for(document in snapshot.documents) {
+                    for (document in snapshot.documents) {
                         val newStop = document.toObject(GameLocation::class.java)
 
-                        if(newStop != null) {
+                        if (newStop != null) {
                             newStop.id = document.id
 
                             stopItems.add(newStop)
-                            println("!!!! Stop added: ${newStop}")
-
+                        }
                     }
-                }
                     recyclerView.adapter?.notifyDataSetChanged()
+                }
             }
-        }
     }
-
 }

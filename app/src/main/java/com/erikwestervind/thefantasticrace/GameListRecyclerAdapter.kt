@@ -10,8 +10,8 @@ import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.Timestamp
 
-class GameListRecyclerAdapter (private val context: Context, private val games: List<GameInfo>)
-    : RecyclerView.Adapter<GameListRecyclerAdapter.ViewHolder>() {
+class GameListRecyclerAdapter(private val context: Context, private val games: List<GameInfo>) :
+    RecyclerView.Adapter<GameListRecyclerAdapter.ViewHolder>() {
     private val layoutInflater = LayoutInflater.from(context)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -28,7 +28,6 @@ class GameListRecyclerAdapter (private val context: Context, private val games: 
         holder.textDescription?.text = game.description
         holder.itemID = game.parent_race
         holder.gamePosition = position
-
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -37,13 +36,11 @@ class GameListRecyclerAdapter (private val context: Context, private val games: 
         var gamePosition = 0
         var itemID: String? = null
 
-
         init {
             itemView.setOnClickListener {
                 val timestamp = Timestamp.now()
                 val date = timestamp.toDate()
                 if (date > games[gamePosition].start_time) {
-                    //val intent = Intent(context, MapsActivity::class.java)
                     val intent = Intent(context, ActiveGameActivity::class.java)
                     intent.putExtra(GAME_ID_KEY, games[gamePosition].parent_race)
                     context.startActivity(intent)

@@ -1,7 +1,5 @@
 package com.erikwestervind.thefantasticrace
 
-import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.Timestamp
 import java.util.*
 
 data class GameLocation(var name: String? = null,
@@ -16,6 +14,3 @@ data class GameLocation(var name: String? = null,
                         var timestamp: Date? = null,
                         var visited: Boolean = false,
                         var entered: Boolean = false)
-{
-
-}

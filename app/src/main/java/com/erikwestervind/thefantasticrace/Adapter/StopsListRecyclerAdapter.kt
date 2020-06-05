@@ -14,8 +14,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.erikwestervind.thefantasticrace.*
 import com.google.firebase.Timestamp
 
-class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
-    : RecyclerView.Adapter<StopsListRecyclerAdapter.ViewHolder>() {
+class StopsListRecyclerAdapter(private val stops: List<GameLocation>) :
+    RecyclerView.Adapter<StopsListRecyclerAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
 
@@ -28,10 +28,10 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val stop = stops[position]
 
-            holder.stopNumerTextView?.text = (stop.order!! + 1).toString()
-            holder.stopNameTextView?.text = stop.name!!.capitalize()
-            holder.stopID = stop.id!!
-            holder.gamePosition = position
+        holder.stopNumerTextView?.text = (stop.order!! + 1).toString()
+        holder.stopNameTextView?.text = stop.name!!.capitalize()
+        holder.stopID = stop.id!!
+        holder.gamePosition = position
 
         if (!stops[position].visited) {
             holder.checkMark.visibility = View.GONE
@@ -49,9 +49,7 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
             holder.stopNumerTextView.setBackgroundResource(R.drawable.rounded_list_grey) //Sets circle to grey
             holder.stopNameTextView.visibility = View.GONE
             holder.padlock.visibility = View.VISIBLE
-
         }
-
     }
 
     inner class ViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
@@ -64,9 +62,7 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
         var gamePosition = 0
         var stopID = ""
 
-
         init {
-
             itemView.setOnClickListener {
                 if (stops[gamePosition].timestamp != null) {
                     //val intent = Intent(context, MapsActivity::class.java)
@@ -75,7 +71,11 @@ class StopsListRecyclerAdapter(private val stops: List<GameLocation>)
                     intent.putExtra("GAMEID", stops[gamePosition].race)
                     parent.context.startActivity(intent)
                 } else {
-                    val message = Toast.makeText(parent.context, "You need to visit stop ${(gamePosition)}: ${stops[gamePosition-1].name!!.capitalize()} first", Toast.LENGTH_LONG)
+                    val message = Toast.makeText(
+                        parent.context,
+                        "You need to visit stop ${(gamePosition)}: ${stops[gamePosition - 1].name!!.capitalize()} first",
+                        Toast.LENGTH_LONG
+                    )
                     message.setGravity(Gravity.BOTTOM, 0, 200)
                     message.show()
                 }

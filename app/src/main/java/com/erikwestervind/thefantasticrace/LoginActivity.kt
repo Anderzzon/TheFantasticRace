@@ -34,7 +34,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     fun goToAddActivity() {
-        val intent = Intent(this, MapsActivity::class.java)
+        val intent = Intent(this, GameListActivity::class.java)
         startActivity(intent)
     }
 
@@ -43,13 +43,11 @@ class LoginActivity : AppCompatActivity() {
             return
 
         auth.signInWithEmailAndPassword(textEmail.text.toString(), textPassword.text.toString())
-            .addOnCompleteListener(this) {task ->
+            .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     goToAddActivity()
-                    println("!!! user Loged in")
                 } else {
-                    Snackbar.make(textEmail, "User not loged in",Snackbar.LENGTH_LONG)
-                    println("!!! Fail to Login")
+                    Snackbar.make(textEmail, "Error, user not loged in", Snackbar.LENGTH_LONG)
                 }
             }
     }
@@ -59,16 +57,12 @@ class LoginActivity : AppCompatActivity() {
             return
 
         auth.createUserWithEmailAndPassword(textEmail.text.toString(), textPassword.text.toString())
-            .addOnCompleteListener(this) {task ->
+            .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     goToAddActivity()
-                    println("!!! user created")
                 } else {
-                    Snackbar.make(textEmail, "User not created",Snackbar.LENGTH_LONG)
-                    println("!!! Fail")
+                    Snackbar.make(textEmail, "Error, user not created", Snackbar.LENGTH_LONG)
                 }
             }
-
-
     }
 }
