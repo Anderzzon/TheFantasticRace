@@ -3,8 +3,9 @@ package com.erikwestervind.thefantasticrace
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.google.firebase.Timestamp
@@ -29,7 +30,9 @@ class GeofenceReceiver: BroadcastReceiver() {
         }
             geofencingEvent.triggeringGeofences.forEach {
                val geofence = it.requestId
+                vibrate(context)
                 updateLocation(geofence)
+
 
                 println("!!!! Geofence entered: " + geofence)
 
@@ -81,6 +84,7 @@ class GeofenceReceiver: BroadcastReceiver() {
                     index = newStop.order!!
                     if (DataManager.gameInfo.unlock_with_question == true) {
                         if (newStop.visited == false) {
+
                             DataManager.circles[index].isVisible = true
                         }
                         locationRef
@@ -103,6 +107,19 @@ class GeofenceReceiver: BroadcastReceiver() {
                     }
                 }
             }
+    }
+
+    private fun vibrate(context: Context?) {
+
+        val vibrator: Vibrator = context!!.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+
+        if (Build.VERSION.SDK_INT >= 26) {
+            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(3000)
+        }
+
+
     }
 
     private fun finishGame() {

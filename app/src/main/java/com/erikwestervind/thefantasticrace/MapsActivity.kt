@@ -26,9 +26,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
-const val SHOW_NEXT_STOP_DIRECT = 0
-const val SHOW_NEXT_STOP_WITH_DELAY = 1
-const val GAME_ID_KEY = "GAME_ID"
+//const val SHOW_NEXT_STOP_DIRECT = 0
+//const val SHOW_NEXT_STOP_WITH_DELAY = 1
+//const val GAME_ID_KEY = "GAME_ID"
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 

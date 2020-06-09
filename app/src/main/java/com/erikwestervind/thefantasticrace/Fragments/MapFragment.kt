@@ -26,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import android.widget.Chronometer
 import androidx.annotation.RequiresApi
+import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.maps.OnMapReadyCallback
 
 
@@ -47,14 +48,13 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     private var locationUpdateState = false
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
-    lateinit var gameInfo: GameInfo //Remove
     lateinit var gameId: String
+    lateinit var parentId: String
     lateinit var player: Player
     lateinit var mapHintTextView: TextView
     lateinit var timeToMarkerTextView: TextView
-    var gameLocations = mutableListOf<GameLocation>()
+    //var gameLocations = mutableListOf<GameLocation>()
 
-    internal val countDownStarted = false
     internal lateinit var countDownTimer: CountDownTimer
     internal var initialCountDown: Long = 600000
     internal val countDownInterval: Long = 1000
@@ -83,13 +83,17 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             googleMap.setOnMarkerClickListener { // Triggered when user click any marker on the map
 
                 val GAME_STRING = "GAMEID"
+                val PARENT_STRING = "PARENTID"
                 val MARKER_STRING = "MARKER"
+
+                //val vibration = (activity as ActiveGameActivity).vibrate()
 
                 println("!!! Marker clicked!")
 
                 if (it != null) {
                     val intent = Intent(context, AnswerQuestionActivity::class.java).apply {
                         putExtra(GAME_STRING, gameId)
+                        putExtra(PARENT_STRING, parentId)
                         putExtra(MARKER_STRING, it.tag.toString())
                     }
                     startActivity(intent)
@@ -113,6 +117,8 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     private fun updateMap() {
 
         gameId = (activity as ActiveGameActivity).gameId
+        parentId = (activity as ActiveGameActivity).parentId
+
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
         DataManager.locations
@@ -120,13 +126,27 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         DataManager.markers
         DataManager.circlesOptions
         DataManager.circles
+        DataManager.listOfGames
 
-        getGameInfo()
+        //Set game from the MutalpleMap:
+        DataManager.gameInfo = DataManager.listOfGames[gameId]!!
+
+        //getGameInfo() Remove?
+
+        //Get locations:
+        //getLocations()
+        map.clear()
+
+        addMarkersToMap()
+        addGeofenceCircle()
+
+        updateLocations() //Look for updates
+
+        loadPlayer()
+
 //        val luma = LatLng(59.304568, 18.094541)
 //        map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
 //        map.moveCamera(CameraUpdateFactory.newLatLngZoom(luma, 12.0f))
-
-
 
         println()
 
@@ -143,14 +163,16 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     private fun loadPlayer() {
         val user = auth.currentUser
 
-        db.collection("races").document(gameId).collection("users").document(user!!.uid)
+        println("!!!! Parent ID: ${parentId}")
+
+        db.collection("races").document(parentId).collection("users").document(user!!.uid)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     println("!!!! Listen failed ${e}")
                 }
                 if (snapshot != null) {
                     player = snapshot.toObject(Player::class.java)!!
-                    showElapsedTime(gameInfo.start_time!!.time)
+                    showElapsedTime(DataManager.gameInfo.start_time!!.time)
                 }
             }
     }
@@ -164,7 +186,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 for(document in documents) {
                     val game = document.toObject(GameInfo::class.java)
                     if (game != null) {
-                        gameInfo =game //Remove
+                        //gameInfo =game //Remove
                         game.id = document.id
                         DataManager.gameInfo = game
                         //setTitle(gameInfo.name!!.capitalize())
@@ -187,7 +209,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             .orderBy("order", Query.Direction.ASCENDING)
             .get()
             .addOnSuccessListener { documents ->
-                gameLocations.clear()
+                //gameLocations.clear()
                 DataManager.locations.clear()
                 DataManager.markerOptions.clear()
                 DataManager.markers.clear()
@@ -200,7 +222,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                     if(newStop != null) {
                         newStop.id = document.id
 
-                        gameLocations.add(newStop)
+                        //gameLocations.add(newStop)
                         DataManager.locations.add(newStop)
 
                         val location = LatLng(newStop.latitude!!, newStop.longitude!!)
@@ -242,7 +264,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
                         DataManager.markerOptions.add(markerOption)
 
-                        val radius = gameInfo.radius
+                        val radius = DataManager.gameInfo.radius
                         val circleOption = CircleOptions()
                             .center(location)
                             //.radius(100.0)
@@ -270,7 +292,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     private fun updateLocations() {
         val user = auth.currentUser
         db.collection("users").document(user!!.uid).collection("places")
-            .whereEqualTo("race", gameId)
+            .whereEqualTo("race", parentId)
             .orderBy("order")
             .addSnapshotListener { snapshot, e ->
                 if(e != null) {
@@ -287,9 +309,9 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                             DataManager.locations[index].timestamp = stop.timestamp
                             //Set start time of first stop:
                             if (stop.order == 0 && stop.timestamp == null) {
-                                stop.timestamp = gameInfo.start_time
+                                stop.timestamp = DataManager.gameInfo.start_time
                             }
-                            showElapsedTime(gameInfo.start_time!!.time)
+                            //showElapsedTime(DataManager.gameInfo.start_time!!.time)
                             println("!!! Updated: ${stop}")
                             println("!!! ID Updated: ${stop.id}")
                         }
@@ -301,8 +323,45 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     }
 
     private fun addMarkersToMap() {
-        for(markerOption in DataManager.markerOptions) {
-            val marker = map.addMarker(markerOption)
+        for(i in 0..DataManager.markerOptions.size-1) {
+
+            if (i == 0) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_start)))
+            }
+            else if (i == DataManager.markerOptions.size - 1) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_end)))
+            } else if (i == 1) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_2)))
+            } else if (i == 2) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_3)))
+            } else if (i == 3) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_4)))
+            } else if (i == 4) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_5)))
+            } else if (i == 5) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_6)))
+            } else if (i == 6) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_7)))
+            } else if (i == 7) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_8)))
+            } else if (i == 8) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_9)))
+            } else if (i == 9) {
+                DataManager.markerOptions[i].icon(BitmapDescriptorFactory.fromBitmap(
+                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_end)))
+            }
+
+            val marker = map.addMarker(DataManager.markerOptions[i])
             marker.tag = marker.snippet
             DataManager.markers.add(marker)
             println("!!! marker added Position: ${marker.position}")
@@ -318,16 +377,9 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     }
 
     private fun handleMarker(marker: Int) {
-        //val timestamp = Timestamp.now()
-        //val date = timestamp.toDate()
-        if (marker == DataManager.markers.size-1) {
-            DataManager.markers[marker].setIcon(BitmapDescriptorFactory.fromBitmap(
-                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_end)))
-        }
-
-        if (gameInfo.show_next_stop == SHOW_NEXT_STOP_DIRECT) {
+        if (DataManager.gameInfo.show_next_stop == SHOW_NEXT_STOP_DIRECT) {
             DataManager.markers[marker].isVisible = true
-        } else if (gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
+        } else if (DataManager.gameInfo.show_next_stop == SHOW_NEXT_STOP_WITH_DELAY) {
 
             val currentTime = Timestamp.now().toDate().time
             val endTime = DataManager.locations[marker].timestamp!!.time + 20000//600000
@@ -366,9 +418,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
     }
 
     private fun runGame() {
-        val timestamp = Timestamp.now()
-        val nextStopSetting = gameInfo.show_next_stop
-        val radius: Float = (gameInfo.radius)!!.toFloat()
+        val radius: Float = (DataManager.gameInfo.radius)!!.toFloat()
 
         for (i in 0..DataManager.locations.size-1) {
             //Change visited stops if any:
@@ -377,8 +427,21 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 //DataManager.markers[i].remove()
                 DataManager.markers[i].isVisible = true
 
-                DataManager.markers[i].setIcon(BitmapDescriptorFactory.fromBitmap(
-                    BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_checked)))
+                try {
+                    DataManager.markers[i].setIcon(BitmapDescriptorFactory.fromBitmap(
+                        BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_checked)))
+                } catch (e: IllegalStateException) {
+                    val message = "Error loading stops"
+                    val view = activity?.findViewById<View>(R.id.mapFragment)
+                    if (view != null) {
+                        val snackbar = Snackbar.make(view, message, Snackbar.LENGTH_INDEFINITE).setAction("Reload"
+                        ) {
+                            runGame()
+                        }
+                        snackbar.show()
+                    }
+                    println("!!!! Error adding marker: ${e}")
+                }
 
                 removeGeofence(DataManager.locations[i].id!!)
             }
@@ -476,6 +539,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         }.build()
 
         val geofencePendingIntent: PendingIntent by lazy {
+
             val intent = Intent(context, GeofenceReceiver::class.java)
             PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
@@ -484,19 +548,42 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             geofencingClient = LocationServices.getGeofencingClient(context!!)
         }
 
-        geofencingClient!!.addGeofences(geofencingRequest, geofencePendingIntent).run {
-            addOnFailureListener { e ->
-                println("!!!! Error adding intent ${e}")
+        try {
+            geofencingClient!!.addGeofences(geofencingRequest, geofencePendingIntent).run {
+                addOnFailureListener { e ->
+                    val view = activity?.findViewById<View>(R.id.mapFragment)
+                    if (view != null) {
+                        val message = "Error loading geofence"
+                        val snackbar = Snackbar.make(view, message, Snackbar.LENGTH_INDEFINITE).setAction("Reload"
+                        ) {
+                            runGame()
+                        }
+                        snackbar.show()
+                    }
+                    println("!!!! Error adding intent ${e}")
+                }
+                addOnSuccessListener {
+                }
+                println("!!!! Request and Intent added")
             }
-            addOnSuccessListener {
+        } catch (e: NullPointerException) {
+            val view = activity?.findViewById<View>(R.id.mapFragment)
+            if (view != null) {
+                val message = "Error loading geofence"
+                val snackbar = Snackbar.make(view, message, Snackbar.LENGTH_INDEFINITE).setAction("Reload"
+                ) {
+                    runGame()
+                }
+                snackbar.show()
             }
-            println("!!!! Request and Intent added")
+            println("!!!! Catching error: ${e}")
         }
     }
 
     override fun onMarkerClick(marker: Marker?) : Boolean {
 
         val GAME_STRING = "GAMEID"
+        val PARENT_STRING = "PARENTID"
         val MARKER_STRING = "MARKER"
 
         println("!!!! Marker clicked!")
@@ -504,6 +591,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
         if (marker != null) {
             val intent = Intent(context, AnswerQuestionActivity::class.java).apply {
                 putExtra(GAME_STRING, gameId)
+                putExtra(PARENT_STRING, parentId)
                 putExtra(MARKER_STRING, marker.tag.toString())
             }
             startActivity(intent)

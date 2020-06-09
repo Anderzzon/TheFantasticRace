@@ -26,6 +26,8 @@ class PlayersFragment : Fragment() {
     lateinit var auth: FirebaseAuth
 
     private var gameId: String? = null
+    private var parentId: String? = null
+
     val players = mutableListOf<Player>()
     var currentGame: GameInfo? = null
 
@@ -50,6 +52,9 @@ class PlayersFragment : Fragment() {
         auth = FirebaseAuth.getInstance()
 
         gameId = (activity as ActiveGameActivity).gameId
+        parentId = (activity as ActiveGameActivity).parentId
+
+        DataManager.listOfGames
         //loadPlayers()
         //getPlayers()
 
@@ -78,7 +83,7 @@ class PlayersFragment : Fragment() {
 
     private fun loadPlayersInGame() {
         val user = auth.currentUser
-        db.collection("races").document(gameId!!).collection("users")
+        db.collection("races").document(parentId!!).collection("users")
             //.orderBy("finishedStops")
             //.orderBy("updated", Query.Direction.ASCENDING)
             //.orderBy("finishedStops", Query.Direction.DESCENDING)
@@ -106,173 +111,13 @@ class PlayersFragment : Fragment() {
             }
     }
 
-    private fun getPlayers() {
-        val user = auth.currentUser
-        //db.collection("races").document(gameId!!).collection("players")
-        val gameRef = db.collection("races").document("da5MBauttD6H5MuD5dfG")
-        gameRef
-            .get()
-            .addOnSuccessListener { document ->
-                if (document != null) {
-                    currentGame = document.toObject(GameInfo::class.java)
-                    if (currentGame != null && currentGame!!.invites != null) {
-                        for (player in currentGame!!.invites!!) {
-                            println("!!!! Player id: ${player}")
-                            db.collection("races").document("da5MBauttD6H5MuD5dfG").collection("users").document(player)
-/*                                .get()
-                                .addOnSuccessListener { document ->
-                                    if (document != null) {
-                                        val player = document.toObject(Player::class.java)
-                                        if(player != null) {
-                                            //gameInvites.add(game)
-                                            players.add(player)
-                                            //createGameFromInvitation(game)
-                                            println("!!!! Game from get(): ${player}")
-                                        }
-                                        println("!!!! invites fetched by get()")
-                                    }
-                                    recyclerView.adapter?.notifyDataSetChanged()
-                                }*/
-                                .addSnapshotListener { snapshot, e ->
-                                    if(e != null) {
-                                        println("!!!! Listen failed getting players in Players Fragment ${e}")
-                                    }
-                                    if (snapshot != null) {
-                                        val newPlayer = document.toObject(Player::class.java)
-                                            if (newPlayer != null) {
-                                                println("!!!! New Player name: ${newPlayer.name}")
-                                                players.add(newPlayer)
-                                            }
 
-                                        recyclerView.adapter?.notifyDataSetChanged()
-                                    }
 
-                                }
-                        }
-                    }
 
-                }
-            }
-//        db.collection("races").document("da5MBauttD6H5MuD5dfG").collection("players")
-//            //gameRef.where("invites", auth.currentUser!!.uid)
-//
-//            .addSnapshotListener { snapshot, e ->
-//                if(e != null) {
-//                    println("!!!! Listen failed getting players in Players Fragment ${e}")
-//                }
-//                if (snapshot != null) {
-//                    players.clear()
-//                    for(document in snapshot.documents) {
-//                        val player = document.toObject(Player::class.java)
-//                        if (player != null) {
-//                            players.add(player)
-//                        }
-//                    }
-//                    recyclerView.adapter?.notifyDataSetChanged()
-//                }
-//            }
-    }
 
-    private fun loadPlayers() {
-        val user = auth.currentUser
-        db.collection("users").document(user!!.uid).collection("races_invited")
-            .whereEqualTo("parent_race", gameId)
-            .addSnapshotListener { snapshot, e ->
-                if(e != null) {
-                    println("!!!! Listen failed ${e}")
-                }
-                if (snapshot != null) {
-                    players.clear()
 
-                    for(document in snapshot.documents) {
-                        //val game = document.toObject(GameInfo::class.java)
-                        currentGame = document.toObject(GameInfo::class.java)
-                        println("!!!! Game info collected")
-                        if(currentGame != null) {
 
-                            if(currentGame!!.listOfPlayers != null) {
-                                //getPlayerInfo2()
-                                for (i in 0.. currentGame!!.listOfPlayers!!.size-1) {
-                                    getPlayerInfo(currentGame!!.listOfPlayers!![i], i)
-                                    println("!!!! UID of player is ${currentGame!!.listOfPlayers!![i]}")
 
-                                }
-                            }
-                            recyclerView.adapter?.notifyDataSetChanged()
-                        }
-                    }
-
-                }
-            }
-    }
-
-    private fun getPlayerInfo2() {
-        for (i in 0 until currentGame!!.listOfPlayers!!.size) {
-            val uid = currentGame!!.listOfPlayers!![i]
-            val gameRef = db.collection("users").document(uid)
-            gameRef.addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    println("!!!! Listen failed ${e}")
-                }
-                if (snapshot != null && snapshot.exists()) {
-                    val user = snapshot.toObject(Player::class.java)
-                    if (user != null) {
-                        getGameInfo(uid, i)
-                        players.add(user)
-                        println("!!!! ${user.name}")
-                        println("!!!! Player added")
-                    }
-                    recyclerView.adapter?.notifyDataSetChanged()
-                }
-            }
-        }
-    }
-
-    private fun getPlayerInfo(uid: String, index: Int) {
-        val you = auth.currentUser
-        val doc = db.collection("users").document(uid)
-        doc.get()
-            .addOnSuccessListener { document ->
-                if (document != null) {
-                    val user = document.toObject(Player::class.java)
-                    if (user != null) {
-                        if (you != null) {
-                            if (you.uid == user.uid) {
-                                user.name = "You"
-                            }
-                        }
-                        players.add(user)
-                        //getGameInfo(uid, index)
-                        println("!!!! Player added: ${user.name}")
-
-                    }
-                    recyclerView.adapter?.notifyDataSetChanged()
-                }
-            }
-    }
-
-    private fun getGameInfo(uid: String, index: Int) {
-        for (i in 0 until players.size)
-        db.collection("users").document(uid).collection("races_invited")
-            .whereEqualTo("parent_race", gameId)
-            .get()
-            .addOnSuccessListener { documents ->
-                for(document in documents) {
-                    val playersGame = document.toObject(GameInfo::class.java)
-                    println("!!!! Document id: ${document.id}")
-                    if (playersGame != null) {
-                        players[index].finishedStops = playersGame.finishedStops
-                        println("!!!! UID is: ${uid}")
-                        println("!!!! Player name: ${players[index].name}")
-                        println("!!!! Finished stops ${players[index].name}: ${players[index].finishedStops}")
-                    }
-                    recyclerView.adapter?.notifyDataSetChanged()
-
-                }
-            }.addOnFailureListener { exception ->
-                println("!!! get failed with  ${exception}")
-            }
-    }
 
 
 }

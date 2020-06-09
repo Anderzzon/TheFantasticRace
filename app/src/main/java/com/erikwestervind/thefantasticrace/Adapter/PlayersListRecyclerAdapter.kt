@@ -20,13 +20,14 @@ class PlayersListRecyclerAdapter(private val players: List<Player>)
 
     override fun getItemCount() = players.count()
 
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val player = players[position]
-
+        if (player.finished_time == null) {
             holder.playerNameTextView?.text = player.name!!.capitalize()
             holder.scoreTextView?.text = "${player.finishedStops.toString()}/${DataManager.locations.size} stops finished"
             holder.playerPosition = position
+        }
+
         if (player.finished_time != null) {
             if (DataManager.gameInfo.start_time != null) {
                 val startTime = DataManager.gameInfo.start_time!!.time

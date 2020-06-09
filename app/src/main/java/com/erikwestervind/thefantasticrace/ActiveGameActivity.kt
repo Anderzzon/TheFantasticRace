@@ -1,12 +1,16 @@
 package com.erikwestervind.thefantasticrace
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -17,9 +21,10 @@ import com.google.android.gms.location.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-//const val SHOW_NEXT_STOP_DIRECT = 0
-//const val SHOW_NEXT_STOP_WITH_DELAY = 1
-//const val GAME_ID_KEY = "GAME_ID"
+const val SHOW_NEXT_STOP_DIRECT = 0
+const val SHOW_NEXT_STOP_WITH_DELAY = 1
+const val GAME_ID_KEY = "GAME_ID"
+const val PARENT_ID_KEY = "GAME_ID_PARENT"
 
 class ActiveGameActivity : AppCompatActivity() {
 
@@ -31,6 +36,7 @@ class ActiveGameActivity : AppCompatActivity() {
     private lateinit var mPagerViewAdapter: PagerViewAdapter
 
     lateinit var gameId: String
+    lateinit var parentId: String
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
 
@@ -65,6 +71,7 @@ class ActiveGameActivity : AppCompatActivity() {
         createLocationRequest()
 
         gameId = intent.getStringExtra(GAME_ID_KEY)
+        parentId = intent.getStringExtra(PARENT_ID_KEY)
         updateTitle()
 
         //init views
@@ -133,6 +140,17 @@ class ActiveGameActivity : AppCompatActivity() {
             playersBtn.setImageResource(R.drawable.ic_group_white_24dp)
         }
 
+    }
+
+    private fun vibrate() {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (vibrator.hasVibrator()) { // Vibrator availability checking
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)) // New vibrate method for API Level 26 or higher
+            } else {
+                vibrator.vibrate(500) // Vibrate method for below API Level 26
+            }
+        }
     }
 
     private fun createLocationRequest() {

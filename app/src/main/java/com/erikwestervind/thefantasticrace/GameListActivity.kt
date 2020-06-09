@@ -38,15 +38,9 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
 
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
-
+        DataManager.listOfGames
 
         loadGames()
-
-        //getInvitations()
-
-        //loadInvitation2()
-
-        //loadInvitation()
 
         recyclerView = findViewById<RecyclerView>(R.id.gamesList)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -58,12 +52,6 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
 
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
-
-        //profileName = findViewById(R.id.profileNameTextView)
-        //profileEmail = findViewById(R.id.emailTextView)
-
-        //profileName.text = ""
-        //profileEmail.text = ""
 
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar, 0, 0
@@ -105,14 +93,18 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
             .addSnapshotListener { snapshot, e ->
                 if (snapshot != null) {
                     gameItems.clear()
+                    DataManager.listOfGames.clear()
                     for(document in snapshot.documents) {
                         val game = document.toObject(GameInfo::class.java)
                         if(game != null) {
                             gameItems.add(game)
+                            game.id = document.id
+                            DataManager.listOfGames.put(game.id!!, game)
+                            println("!!!! Map: ${DataManager.listOfGames}")
                         }
                     }
                     loadInvitations()
-                    //getInvitations()
+
                     recyclerView.adapter?.notifyDataSetChanged()
 
                     println("!!!! Recycler view updated")
@@ -156,59 +148,6 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                     println("!!!! Listen failed in load invitations ${e}")
                 }
             }
-    }
-
-    private fun getInvitations() {
-        val user = auth.currentUser
-        val uid:String = user!!.uid!!
-        db.collection("races")//.document(user!!.uid).collection("races_invited")
-            //.whereArrayContains("invites", uid)
-            .whereEqualTo("name", "Demo")
-            .get()
-            .addOnSuccessListener { documents ->
-                for (document in documents) {
-                    val gameInvite = document.toObject(GameInfo::class.java)
-                    if (gameInvite != null) {
-                        checkForExistingGame(gameInvite)
-                    }
-                }
-                recyclerView.adapter?.notifyDataSetChanged()
-
-            }
-            .addOnFailureListener { e ->
-                println("!!!! Error getting query ${e}")
-            }
-    }
-
-    private fun createGameFromInvitation(gameToCheck: GameInfo) {
-        //val gameExists = checkForExistingGame(game)
-//        checkForExistingGame(game)
-//        if (!gameExists) {
-//            val user = auth.currentUser
-//            val gameToAdd = hashMapOf(
-//                "name" to game.name,
-//                "description" to game.description,
-//                "parent_race" to game.id,
-//                "gameFinished" to false,
-//                "radius" to game.radius,
-//                "show_next_stop" to game.show_next_stop,
-//                "show_players_on_map" to game.show_players_map,
-//                "start_time" to game.start_time,
-//                "unlock_with_question" to game.unlock_with_question
-//            )
-//            db.collection("users").document(user!!.uid).collection("races_invited").document()
-//                .set(gameToAdd)
-//                .addOnSuccessListener {
-//                    println("!!!! Game saved")
-//                }
-//                .addOnFailureListener {e ->
-//                    println("!!!! Error saving game: ${e}")
-//                }
-//            val userToAdd = hashMapOf(
-//
-//            )
-//        }
-
     }
 
     private fun checkForExistingGame(gameToCheck: GameInfo) {
@@ -299,78 +238,6 @@ class GameListActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
             }
             .addOnFailureListener { e ->
                 println("!!!! Error getting query ${e}")
-            }
-    }
-
-    private fun loadInvitation() { //Not used
-        val user = auth.currentUser
-        val uid = user!!.uid!!
-        println("!!!! User uid: ${uid}")
-
-        val gameRef = db.collection("races").document("YPDIFE6r2YaZg68Htt2k") // da5MBauttD6H5MuD5dfG
-        gameRef.get()
-            .addOnSuccessListener { document ->
-                if (document != null) {
-                    val game = document.toObject(GameInfo::class.java)
-                    if(game != null) {
-                        println("!!!! User uid: ${uid}")
-                        //gameInvites.add(game)
-                        gameItems.add(game)
-                        //createGameFromInvitation(game)
-                        println("!!!! Game from get(): ${game}")
-                    }
-                    println("!!!! invites fetched by get()")
-                }
-                recyclerView.adapter?.notifyDataSetChanged()
-            }
-            .addOnFailureListener { e ->
-                println("!!!! Listen failed ${e}" )
-            }
-    }
-
-    private fun loadInvitation2() { //Not used
-        val user = auth.currentUser
-        val uid = user!!.uid!!
-        println("!!!! User uid: ${uid}")
-
-        val gameRef = db.collection("races")
-            .whereArrayContains("invites", uid+"")
-            .get()
-            .addOnSuccessListener { documents ->
-                for (document in documents) {
-                    if (document != null) {
-                        val game = document.toObject(GameInfo::class.java)
-                        if (game != null) {
-                            println("!!!! User uid: ${uid}")
-                            //gameInvites.add(game)
-                            //createGameFromInvitation(game)
-                            println("!!!! Game from get(): ${game}")
-                        }
-                        println("!!!! invites fetched by get()")
-                    }
-                }
-            }
-            .addOnFailureListener { e ->
-                println("!!!! Listen failed ${e}" )
-            }
-    }
-
-    private fun loadProfile() {
-
-        val user = auth.currentUser
-        val uid = user!!.uid!!
-        println("!!!! User uid: ${uid}")
-
-        val userRef = db.collection("users").document(user.uid)
-        userRef.get()
-            .addOnSuccessListener { document ->
-                if (document != null) {
-                    currentPlayer = document.toObject(Player::class.java)
-                    println("!!!! invites fetched")
-                }
-            }
-            .addOnFailureListener { e ->
-                println("!!!! Listen failed ${e}" )
             }
     }
 

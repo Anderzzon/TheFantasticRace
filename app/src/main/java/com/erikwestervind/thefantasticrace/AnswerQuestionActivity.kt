@@ -25,8 +25,10 @@ class AnswerQuestionActivity : AppCompatActivity() {
     lateinit var answerTextView: TextView
     lateinit var question: GameLocation
     lateinit var gameID: String
+    lateinit var parentID: String
     var answerInput = ""
     val GAME_STRING = "GAMEID"
+    val PARENT_STRING = "PARENTID"
     val MARKER_STRING = "MARKER"
     var markerIndex = 0
 
@@ -50,6 +52,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
         answerTextView.visibility = View.GONE
 
         gameID = intent.getStringExtra(GAME_STRING)
+        parentID = intent.getStringExtra(PARENT_STRING)
         locationID = intent.getStringExtra(MARKER_STRING)
 
         DataManager.locations
@@ -61,7 +64,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
                     if (question.entered == true) {
                     val answer = answerQuestion(question.answer!!)
                     if (answer == true) {
-                        updateVisit(gameID)
+                        updateVisit()
                         showHideViews()
                         finish()
                     }
@@ -124,7 +127,7 @@ class AnswerQuestionActivity : AppCompatActivity() {
         return false
     }
 
-    private fun updateVisit(game: String) {
+    private fun updateVisit() {
         val user = auth.currentUser
         val locationRef =
             db.collection("users").document(user!!.uid).collection("places").document(locationID)
@@ -144,13 +147,13 @@ class AnswerQuestionActivity : AppCompatActivity() {
     private fun updatePlayerScore() {
         val user = auth.currentUser
         val playerRef =
-            db.collection("races").document(gameID).collection("users").document(user!!.uid)
+            db.collection("races").document(parentID).collection("users").document(user!!.uid)
         playerRef
             .update("finishedStops", markerIndex+1)
             .addOnSuccessListener {
                 println("!!!! Player score successfully updated!")
             }
-            .addOnFailureListener { e -> println("!!!! Error updating player ${e}") }
+            .addOnFailureListener { e -> println("!!!! Error updating players finished stops ${e}") }
         if (markerIndex == DataManager.locations.size-1) {
             playerRef
                 .update("finished_time", Timestamp.now())
@@ -159,60 +162,6 @@ class AnswerQuestionActivity : AppCompatActivity() {
                 }
                 .addOnFailureListener { e -> println("!!!! Error updating player finish time ${e}") }
         }
-    }
-
-    private fun updateFinish() {
-        val user = auth.currentUser
-        val playerRef =
-            db.collection("races").document(gameID).collection("users").document(user!!.uid)
-        if (markerIndex == DataManager.locations.size-1) {
-            playerRef
-                .update("finished_time", Timestamp.now())
-                .addOnSuccessListener {
-                    println("!!!! Player finished-time updated!")
-                }
-                .addOnFailureListener { e -> println("!!!! Error updating player finish time ${e}") }
-        }
-    }
-
-    private fun updateScore(game: String) {
-        val user = auth.currentUser
-        db.collection("users").document(user!!.uid).collection("races_invited")
-            .whereEqualTo("parent_race", game)
-            .get()
-            .addOnSuccessListener { documents ->
-                for(document in documents) {
-                    val game = document.toObject(GameInfo::class.java)
-                    if (game != null) {
-                        game.id = document.id
-                        val playerRef =
-                            db.collection("races").document(game.id!!).collection("users").document(user.uid)
-                        playerRef
-                            .update("finishedStops", markerIndex+1)
-                            .addOnSuccessListener {
-                                println("!!!! Player score successfully updated!")
-                            }
-                            .addOnFailureListener { e -> println("!!!! Error updating player ${e}") }
-                        val gameRef =
-                            db.collection("users").document(user!!.uid).collection("races_invited").document(game.id!!)
-/*                        gameRef
-                            .update("finishedStops", markerIndex + 1)
-                            .addOnSuccessListener {
-                                println("!!!! Marker Index DocumentSnapshot successfully updated!")
-                            }
-                            .addOnFailureListener { e -> println("!!! Error updating document ${e}") }*/
-                        if (markerIndex == DataManager.locations.size-1) {
-                            gameRef
-                                .update("finished_time", Timestamp.now())
-                        }
-
-
-                    }
-
-                }
-            }.addOnFailureListener { exception ->
-                println("!!! get failed with  ${exception}")
-            }
     }
 
     private fun showHideViews() {

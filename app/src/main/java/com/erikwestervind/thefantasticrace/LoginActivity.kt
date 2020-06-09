@@ -34,7 +34,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     fun goToAddActivity() {
-        val intent = Intent(this, MapsActivity::class.java)
+        val intent = Intent(this, GameListActivity::class.java)
         startActivity(intent)
     }
 
