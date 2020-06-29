@@ -37,6 +37,7 @@ class ActiveGameActivity : AppCompatActivity() {
 
     lateinit var gameId: String
     lateinit var parentId: String
+    lateinit var player: Player
     lateinit var db: FirebaseFirestore
     lateinit var auth: FirebaseAuth
 
@@ -72,7 +73,14 @@ class ActiveGameActivity : AppCompatActivity() {
 
         gameId = intent.getStringExtra(GAME_ID_KEY)
         parentId = intent.getStringExtra(PARENT_ID_KEY)
-        updateTitle()
+
+
+        //updateTitle()
+        currentGame = DataManager.listOfGames[gameId]!!
+
+        title = DataManager.listOfGames[gameId]!!.name
+
+        //finishedMessage()
 
         //init views
         mViewPager = findViewById(R.id.mViewPager)
@@ -116,6 +124,8 @@ class ActiveGameActivity : AppCompatActivity() {
         //default tab
         mViewPager.currentItem = 1
         mapBtn.setImageResource(R.drawable.ic_map_white_24dp)
+
+        updatePlayer()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -140,17 +150,6 @@ class ActiveGameActivity : AppCompatActivity() {
             playersBtn.setImageResource(R.drawable.ic_group_white_24dp)
         }
 
-    }
-
-    private fun vibrate() {
-        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        if (vibrator.hasVibrator()) { // Vibrator availability checking
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)) // New vibrate method for API Level 26 or higher
-            } else {
-                vibrator.vibrate(500) // Vibrate method for below API Level 26
-            }
-        }
     }
 
     private fun createLocationRequest() {
@@ -209,7 +208,6 @@ class ActiveGameActivity : AppCompatActivity() {
         println("!!!! requestLocationUpdates")
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
         println("!!!! " + fusedLocationClient.lastLocation)
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -237,56 +235,29 @@ class ActiveGameActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateTitle() {
-        val user = auth.currentUser
-
-        db.collection("users").document(user!!.uid).collection("races_invited")
-            .whereEqualTo("parent_race", gameId)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    println("!!!! Listen failed ${e}")
-                }
-                if (snapshot != null) {
-                    for (document in snapshot.documents) {
-                        if (document!= null) {
-                            currentGame = document.toObject(GameInfo::class.java)!!
-                            if (currentGame != null) {
-                                    title = currentGame.name!!.capitalize()
-
-                                updatePlayer()
-                            }
-                            if (e != null) {
-                                println("!!!! Listen failed ${e}")
-                            }
-                        }
-                    }
-                }
-            }
-    }
-
     private fun updatePlayer() {
+
+        println("!!!! In update player function")
         val user = auth.currentUser
 
-        db.collection("races").document(gameId).collection("users").document(user!!.uid)
+        db.collection("races").document(parentId).collection("users").document(user!!.uid)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    println("!!!! Listen failed ${e}")
+                    println("!!!! Listen failed in update player ${e}")
                 }
                 if (snapshot != null) {
-                    val player = snapshot.toObject(Player::class.java)
-                    if (player != null) {
+                    val fetchedPlayer = snapshot.toObject(Player::class.java)
+                    if (fetchedPlayer != null) {
+                        player = fetchedPlayer
                         if (player.gameFinished == true) {
                             title = "Finished: ${currentGame.name!!.capitalize()}"
                             finishedMessage()
+                            println("!!!! Player finish check updated")
                         }
-                    }
-                    if (e != null) {
-                        println("!!!! Listen failed ${e}")
                     }
                 }
             }
     }
-
 
     private fun finishedMessage() {
         val builder = AlertDialog.Builder(this@ActiveGameActivity)

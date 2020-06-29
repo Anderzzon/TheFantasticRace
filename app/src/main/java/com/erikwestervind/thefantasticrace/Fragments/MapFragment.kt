@@ -85,6 +85,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 val GAME_STRING = "GAMEID"
                 val PARENT_STRING = "PARENTID"
                 val MARKER_STRING = "MARKER"
+                val MARKER_ORDER = "MARKERORDER"
 
                 //val vibration = (activity as ActiveGameActivity).vibrate()
 
@@ -144,19 +145,14 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
 
         loadPlayer()
 
-//        val luma = LatLng(59.304568, 18.094541)
-//        map.addMarker(MarkerOptions().position(luma).title("Marker in Luma"))
-//        map.moveCamera(CameraUpdateFactory.newLatLngZoom(luma, 12.0f))
 
-        println()
-
-        println("!!!! Lastlocation before nullcheck: ${lastLocation}")
-        if(lastLocation != null) {
-            lastLocation = (activity as ActiveGameActivity).lastLocation
-            println("!!!! Lastlocation: ${lastLocation}")
-            val currentLatLng = LatLng(lastLocation!!.latitude, lastLocation!!.longitude)
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
-        }
+//        println("!!!! Lastlocation before nullcheck: ${lastLocation}")
+//        if(lastLocation != null) {
+//            lastLocation = (activity as ActiveGameActivity).lastLocation
+//            println("!!!! Lastlocation: ${lastLocation}")
+//            val currentLatLng = LatLng(lastLocation!!.latitude, lastLocation!!.longitude)
+//            map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
+//        }
 
     }
 
@@ -306,6 +302,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                             val index = stop.order!!
                             DataManager.locations[index].id = stop.id
                             DataManager.locations[index].visited = stop.visited
+                            DataManager.locations[index].entered = stop.entered
                             DataManager.locations[index].timestamp = stop.timestamp
                             //Set start time of first stop:
                             if (stop.order == 0 && stop.timestamp == null) {
@@ -396,7 +393,18 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                 countDownTimer.start()
             } else {
                 DataManager.markers[marker].isVisible = true
+                val currentLatLng = LatLng(DataManager.markers[marker].position.latitude, DataManager.markers[marker].position.longitude)
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
             }
+            if (DataManager.locations[marker].visited == true) {
+                DataManager.markers[marker].isVisible = true
+            }
+        }
+    }
+
+    private fun handleCircle(marker: Int) {
+        if (DataManager.locations[marker].entered == true && DataManager.locations[marker].visited == false) {
+            DataManager.circles[marker].isVisible = true
         }
     }
 
@@ -412,6 +420,8 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
             override fun onFinish() {
                 timeToMarkerTextView.visibility = View.GONE
                 DataManager.markers[marker].isVisible = true
+                val currentLatLng = LatLng(DataManager.markers[marker].position.latitude, DataManager.markers[marker].position.longitude)
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 14f))
                 val snackMessage = "Next stop now visible on map"
             }
         }
@@ -458,6 +468,7 @@ class MapFragment : Fragment(), GoogleMap.OnMarkerClickListener {
                         .update("timestamp", timestamp)
                 }
                 createGeofence(i, radius)
+                handleCircle(i)
                 handleMarker(i)
                 return
             }

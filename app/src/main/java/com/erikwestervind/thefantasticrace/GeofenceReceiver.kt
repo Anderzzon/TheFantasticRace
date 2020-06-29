@@ -61,52 +61,48 @@ class GeofenceReceiver: BroadcastReceiver() {
             // Get the geofences that were triggered. A single event can trigger
             // multiple geofences.
 
-
             println("!!!! You have entered a geofence")
 
         } else {
             println("!!!! Error, not in a geofence")
         }
-
     }
 
-    private fun updateLocation(id:String) {
+    private fun updateLocation(id: String) {
         val user = auth.currentUser
-        var index:Int
-        val locationRef = db.collection("users").document(user!!.uid).collection("places").document(id)
-        locationRef
-            .get()
-            .addOnSuccessListener { document ->
-
-                val newStop = document.toObject(GameLocation::class.java)
-                if(newStop != null) {
-
-                    index = newStop.order!!
-                    if (DataManager.gameInfo.unlock_with_question == true) {
-                        if (newStop.visited == false) {
-
-                            DataManager.circles[index].isVisible = true
-                        }
-                        locationRef
-                            .update("entered", true)
-
-                        if (index == DataManager.locations.size-1) {
-                            locationRef
-                                .update("visited", true)
-                            finishGame()
-                        }
-                        //DataManager.markers[index].isVisible = true
-                    } else {
-                        locationRef
-                            .update("entered", true)
-                        locationRef
-                            .update("visited", true)
-                            .addOnSuccessListener {
-                                println("!!!! DocumentSnapshot successfully updated!")}
-                            .addOnFailureListener { e -> println("!!!! Error updating document ${e}") }
-                    }
-                }
+        var lastStop = false
+        loop@ for (stop in DataManager.locations) {
+            if (stop.id == id && stop.order == DataManager.locations.size - 1) {
+                lastStop = true
+                break@loop
             }
+            println("!!!! Not last stop")
+        }
+        val locationRef =
+            db.collection("users").document(user!!.uid).collection("places").document(id)
+
+        if (DataManager.gameInfo.unlock_with_question == true) {
+//                        if (newStop.visited == false) {
+//                            DataManager.circles[index].isVisible = true
+//                        }
+            locationRef
+                .update("entered", true)
+
+            if (lastStop == true) {
+                locationRef
+                    .update("visited", true)
+                finishGame()
+            }
+        } else {
+            locationRef
+                .update("entered", true)
+            locationRef
+                .update("visited", true)
+                .addOnSuccessListener {
+                    println("!!!! DocumentSnapshot successfully updated!")
+                }
+                .addOnFailureListener { e -> println("!!!! Error updating document ${e}") }
+        }
     }
 
     private fun vibrate(context: Context?) {
@@ -118,8 +114,6 @@ class GeofenceReceiver: BroadcastReceiver() {
         } else {
             vibrator.vibrate(3000)
         }
-
-
     }
 
     private fun finishGame() {
@@ -131,5 +125,4 @@ class GeofenceReceiver: BroadcastReceiver() {
         gameRef
             .update("gameFinished", true)
     }
-
 }

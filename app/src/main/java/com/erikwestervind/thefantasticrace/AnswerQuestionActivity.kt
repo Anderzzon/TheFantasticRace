@@ -57,7 +57,8 @@ class AnswerQuestionActivity : AppCompatActivity() {
 
         DataManager.locations
 
-        getLocationInfo(locationID)
+        showQuestion(locationID)
+        //getLocationInfo(locationID)
 
             answerButton.setOnClickListener {
                 if(question.answer != null) {
@@ -77,6 +78,28 @@ class AnswerQuestionActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    private fun showQuestion(uid: String) {
+        for (stop in DataManager.locations) {
+            if (stop.id == uid) {
+                question = DataManager.locations[stop.order!!]
+                title = question.name!!.capitalize()
+                if (question.hint != null) {
+                    hintTextView.text = question.hint
+                }
+                if (question.question != null) {
+                    if (question.entered == true) {
+                        questionTextView.text = question.question
+                    } else {
+                        val notEnteredMessage = "You need to get closer"
+                        Snackbar.make(findViewById(R.id.answerButton), notEnteredMessage, Snackbar.LENGTH_INDEFINITE).show()
+                    }
+                }
+                showHideViews()
+
+            }
+        }
     }
 
     private fun getLocationInfo(uid: String) {
@@ -141,7 +164,6 @@ class AnswerQuestionActivity : AppCompatActivity() {
 
             }
             .addOnFailureListener { e -> println("!!! Error updating document ${e}") }
-
     }
 
     private fun updatePlayerScore() {
